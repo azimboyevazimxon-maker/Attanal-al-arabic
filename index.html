@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Attanal">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>🕌 Attanal Al Arabic</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f1117;color:#e2e8f0;font-family:'Segoe UI',sans-serif;min-height:100vh;padding-bottom:80px}
+
+#loader{position:fixed;inset:0;background:#0f1117;z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+.spin{width:42px;height:42px;border:3px solid #2d3252;border-top-color:#6366f1;border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.ov{position:fixed;inset:0;background:#000b;z-index:300;display:none;align-items:center;justify-content:center;padding:16px}
+.ov.show{display:flex}
+.modal{background:#1a1f35;border:1px solid #2d3252;border-radius:18px;padding:24px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto}
+.modal h2{font-size:18px;font-weight:800;color:#fff;margin-bottom:14px;text-align:center}
+.mbtn{width:100%;padding:13px;border-radius:10px;border:none;font-weight:800;font-size:15px;cursor:pointer;margin-top:8px}
+.mbtn.pri{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff}
+.mbtn.sec{background:transparent;border:1px solid #2d3252;color:#9ca3af}
+.mbtn.red{background:transparent;border:1px solid #ef4444;color:#ef4444}
+
+.hdr{background:linear-gradient(135deg,#1e2235,#16192b);border-bottom:1px solid #2d3252;padding:14px 16px 12px;position:sticky;top:0;z-index:100}
+.hdr-in{max-width:720px;margin:0 auto}
+.hdr-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.iconbtn{position:relative;width:38px;height:38px;border-radius:10px;border:1px solid #2d3252;background:#0f1117;color:#cbd5e1;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.prog{height:5px;background:#2d3252;border-radius:99px;overflow:hidden;margin-top:10px}
+.prog-f{height:100%;background:linear-gradient(90deg,#6366f1,#8b5cf6);border-radius:99px;transition:width .4s}
+
+/* DRAWER */
+#drawerBg{position:fixed;inset:0;background:#0009;z-index:390;display:none;backdrop-filter:blur(2px)}
+#drawerBg.open{display:block}
+#drawer{position:fixed;top:0;left:0;height:100%;width:290px;max-width:85vw;background:#161a2b;border-right:1px solid #2d3252;z-index:400;transform:translateX(-100%);transition:transform .25s;overflow-y:auto;padding:18px 14px;padding-top:max(18px,env(safe-area-inset-top))}
+#drawer.open{transform:none}
+.dHead{display:flex;align-items:center;gap:10px;padding:6px 6px 14px;border-bottom:1px solid #2d3252;margin-bottom:10px}
+.dItem{display:flex;align-items:center;gap:11px;width:100%;padding:11px 12px;border-radius:10px;border:none;background:transparent;color:#cbd5e1;font-size:14px;font-weight:600;cursor:pointer;text-align:left;margin-bottom:1px}
+.dItem:active{background:#1f2540}
+.dItem .di{font-size:17px;width:22px;text-align:center}
+.dSec{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#4b5563;margin:14px 0 4px;padding-left:8px;font-weight:700}
+.dBadge{margin-left:auto;background:#ef4444;color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;min-width:18px;text-align:center}
+
+.main{max-width:720px;margin:0 auto;padding:0 14px}
+.s3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.sc{background:#1a1f35;border-radius:12px;padding:10px 6px;text-align:center;border:1px solid transparent}
+.c4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:7px}
+.cc{background:#1a1f35;border-radius:10px;padding:8px 5px;text-align:center;border:1px solid transparent}
+.totc{background:linear-gradient(135deg,#1e3a2f,#1a2a1e);border:1px solid #22c55e33;border-radius:12px;padding:11px 16px;margin-top:7px;display:flex;justify-content:space-between;align-items:center}
+.abar{background:#1a1f35;border:1px solid #6366f133;border-radius:12px;padding:10px 14px;margin-top:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+
+.addbtn{width:100%;margin-top:11px;padding:12px;border-radius:12px;border:2px dashed #6366f1;background:transparent;color:#6366f1;font-weight:700;font-size:15px;cursor:pointer;transition:all .2s}
+.addbtn.op{background:#6366f1;color:#fff}
+.fbox{background:#1a1f35;border:1px solid #2d3252;border-radius:14px;padding:14px;margin-top:8px;display:none}
+.fbox.op{display:block}
+.fg{display:grid;gap:9px}
+input,select{width:100%;padding:11px 14px;border-radius:10px;border:1px solid #2d3252;background:#0f1117;color:#e2e8f0;font-size:14px;outline:none;font-family:inherit}
+input::placeholder{color:#4b5563}
+.fl{font-size:12px;color:#6b7280;margin-bottom:5px}
+.cbg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.cbtn{padding:10px 8px;border-radius:10px;border:2px solid #2d3252;background:transparent;color:#9ca3af;cursor:pointer;text-align:left;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center;transition:all .15s}
+.pdsp{padding:12px 14px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;margin-top:2px}
+.pbg{display:flex;gap:6px}
+.pbtn{flex:1;padding:9px 4px;border-radius:9px;border:2px solid #2d3252;background:transparent;color:#9ca3af;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s}
+.subbtn{width:100%;padding:13px;border-radius:10px;border:none;color:#fff;font-weight:800;font-size:15px;cursor:pointer;margin-top:2px}
+
+/* password input with eye */
+.pwrap{position:relative}
+.pwrap .eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:none;background:transparent;color:#6b7280;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.pwrap input{padding-right:44px}
+
+.sarea{margin-top:11px;display:grid;gap:7px}
+.frow{display:flex;gap:5px;flex-wrap:wrap}
+.fb{padding:5px 10px;border-radius:8px;border:1px solid #2d3252;background:transparent;color:#9ca3af;font-size:11px;cursor:pointer;font-weight:600;transition:all .15s}
+.fb.on{background:#6366f1;border-color:#6366f1;color:#fff;font-weight:700}
+
+.slist{display:grid;gap:7px;margin-top:6px}
+.scard{background:#1a1f35;border-radius:12px;padding:11px 13px;border:1px solid #2d3252;border-left:3px solid #ef4444}
+.scard.paid{border-color:#22c55e33;border-left-color:#22c55e}
+.sinner{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.sinfo{flex:1;min-width:0}
+.stags{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:2px}
+.bdg{font-size:11px;padding:2px 7px;border-radius:99px;font-weight:700}
+.sacts{display:flex;flex-direction:column;gap:4px}
+.abtn{padding:5px 9px;border-radius:7px;font-size:11px;cursor:pointer;font-weight:700;white-space:nowrap;transition:all .15s;background:transparent}
+.empty{text-align:center;color:#6b7280;padding:40px 0;font-size:14px}
+
+#toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);color:#fff;padding:10px 22px;border-radius:10px;font-weight:700;z-index:9999;font-size:14px;box-shadow:0 4px 20px #0008;display:none;white-space:nowrap;max-width:92vw;text-align:center}
+
+.pr{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #2d325230;font-size:13px;gap:8px}
+.pr:last-child{border-bottom:none}
+.box{background:#0f1117;border:1px solid #2d3252;border-radius:10px;padding:12px;margin-top:8px}
+.kv{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #2d325230;font-size:13px}
+.kv:last-child{border-bottom:none}
+.kv b{color:#fff}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700}
+.wkrow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;background:#0f1117;border:1px solid #2d3252;border-radius:10px;margin-bottom:7px}
+.wkrow.cur{border-color:#6366f1}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.viewbadge{background:#38bdf822;color:#38bdf8;border:1px solid #38bdf855;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700}
+</style>
+</head>
+<body>
+
+<div id="loader"><div class="spin"></div><div style="color:#6b7280;font-size:13px">Yuklanmoqda...</div></div>
+<div id="toast"></div>
+
+<!-- LOGIN -->
+<div class="ov" id="ovLogin">
+  <div class="modal">
+    <div style="text-align:center;font-size:40px;margin-bottom:6px">🕌</div>
+    <h2>Attanal Al Arabic</h2>
+    <p style="text-align:center;color:#6b7280;font-size:13px;margin-bottom:18px">Kirish uchun parolingizni yozing</p>
+    <div class="pwrap">
+      <input id="inCode" type="password" placeholder="Parol..." style="text-align:center;font-size:18px;letter-spacing:3px;font-weight:700" maxlength="24" onkeydown="if(event.key==='Enter')doLogin()" />
+      <button type="button" class="eye" onclick="togPw('inCode',this)">👁</button>
+    </div>
+    <button class="mbtn pri" onclick="doLogin()" style="margin-top:12px">Kirish →</button>
+  </div>
+</div>
+
+<!-- REQUEST PERM -->
+<div class="ov" id="ovReq">
+  <div class="modal">
+    <h2>⚠️ Limit tugadi</h2>
+    <p style="color:#9ca3af;font-size:13px;text-align:center;margin-bottom:16px">Sizga berilgan limit (<span id="reqLim"></span> ta) tugadi.<br>Admindan qo'shimcha ruxsat so'rashni xohlaysizmi?</p>
+    <button class="mbtn pri" onclick="sendPermReq()">✉️ So'rov yuborish</button>
+    <button class="mbtn sec" onclick="hide('ovReq')">Bekor qilish</button>
+  </div>
+</div>
+
+<!-- DEVICE PASSWORDS (admin) -->
+<div class="ov" id="ovDev">
+  <div class="modal" style="max-width:520px">
+    <h2>🔑 Qurilma parollari</h2>
+    <p style="color:#6b7280;font-size:12px;text-align:center;margin-bottom:12px">Har bir qurilmaga alohida parol. Faqat o'z paroli bilan kiradi.</p>
+    <div class="box">
+      <div class="fl">Yangi qurilma</div>
+      <input id="dpName" placeholder="Qurilma nomi (masalan: Ali ustoz)" style="margin-bottom:7px" />
+      <div style="display:flex;gap:7px;margin-bottom:7px">
+        <input id="dpPass" placeholder="Parol" style="flex:1" />
+        <input id="dpLimit" placeholder="Limit" type="number" value="5" style="width:80px" />
+      </div>
+      <button class="mbtn pri" onclick="addDevice()">+ Qurilma qo'shish</button>
+    </div>
+    <div id="devList" style="margin-top:8px"></div>
+    <button class="mbtn sec" onclick="hide('ovDev')" style="margin-top:10px">Yopish</button>
+  </div>
+</div>
+
+<!-- LEGACY PERMS (admin) -->
+<div class="ov" id="ovPerm">
+  <div class="modal" style="max-width:500px">
+    <h2>🔐 Ruxsatlar (eski qurilmalar)</h2>
+    <div id="permList"></div>
+    <button class="mbtn sec" onclick="hide('ovPerm')" style="margin-top:10px">Yopish</button>
+  </div>
+</div>
+
+<!-- EDIT STUDENT -->
+<div class="ov" id="ovEdit">
+  <div class="modal">
+    <h2>✏️ Tahrirlash</h2>
+    <div class="fg">
+      <input id="eName" placeholder="Ism *" />
+      <input id="ePhone" placeholder="Telefon *" type="tel" inputmode="numeric" oninput="this.value=fmtPhone(this.value)" />
+      <div><div class="fl">Kategoriya</div><div class="cbg" id="eCatBtns"></div></div>
+      <input id="eAmount" placeholder="Summa" type="number" />
+      <div><div class="fl">To'lov turi</div><div class="pbg" id="ePayBtns"></div></div>
+      <input id="eNote" placeholder="Izoh" />
+    </div>
+    <button class="mbtn pri" onclick="saveEdit()" style="margin-top:12px">💾 Saqlash</button>
+    <button class="mbtn sec" onclick="hide('ovEdit')">Bekor qilish</button>
+  </div>
+</div>
+
+<!-- PENDING REQUESTS (admin) -->
+<div class="ov" id="ovPending">
+  <div class="modal" style="max-width:500px">
+    <h2>📨 So'rovlar</h2>
+    <div id="pendingList"></div>
+    <button class="mbtn sec" onclick="hide('ovPending')" style="margin-top:10px">Yopish</button>
+  </div>
+</div>
+
+<!-- NOTIFICATIONS (admin) -->
+<div class="ov" id="ovNotif">
+  <div class="modal" style="max-width:500px">
+    <h2>🔔 Bildirishnomalar</h2>
+    <div id="notifList" style="max-height:60vh;overflow-y:auto"></div>
+    <button class="mbtn sec" onclick="clearNotif()" style="margin-top:10px">🗑 Hammasini tozalash</button>
+    <button class="mbtn sec" onclick="hide('ovNotif')">Yopish</button>
+  </div>
+</div>
+
+<!-- SEARCH (global, all weeks) -->
+<div class="ov" id="ovSearch">
+  <div class="modal" style="max-width:520px">
+    <h2>🔍 Odam qidirish</h2>
+    <p style="color:#6b7280;font-size:12px;text-align:center;margin-bottom:10px">Barcha haftalardan qidiradi</p>
+    <div style="display:flex;gap:7px">
+      <input id="gsInput" placeholder="Ism familiya..." style="flex:1" onkeydown="if(event.key==='Enter')runSearch()" />
+      <button class="mbtn pri" style="width:auto;margin:0;padding:11px 16px" onclick="runSearch()">Qidir</button>
+    </div>
+    <div id="gsResult" style="margin-top:12px"></div>
+    <button class="mbtn sec" onclick="hide('ovSearch')" style="margin-top:8px">Yopish</button>
+  </div>
+</div>
+
+<!-- ACCOUNTING -->
+<div class="ov" id="ovAcc">
+  <div class="modal" style="max-width:520px">
+    <h2>💰 Hisob-kitob</h2>
+    <div style="display:flex;gap:6px;margin-bottom:12px">
+      <button class="fb on" id="accCur" onclick="accScope('cur')" style="flex:1;padding:8px">Joriy hafta</button>
+      <button class="fb" id="accAll" onclick="accScope('all')" style="flex:1;padding:8px">Barcha haftalar</button>
+    </div>
+    <div id="accBody"></div>
+    <button class="mbtn sec" onclick="hide('ovAcc')" style="margin-top:10px">Yopish</button>
+  </div>
+</div>
+
+<!-- ARCHIVE / WEEKS -->
+<div class="ov" id="ovArch">
+  <div class="modal" style="max-width:500px">
+    <h2>🗄 Haftalar / Arxiv</h2>
+    <button class="mbtn pri" onclick="addWeek()" id="addWeekBtn">+ Yangi hafta</button>
+    <div id="archList" style="margin-top:12px"></div>
+    <button class="mbtn sec" onclick="hide('ovArch')" style="margin-top:8px">Yopish</button>
+  </div>
+</div>
+
+<!-- DAILY CODE (admin) -->
+<div class="ov" id="ovCode">
+  <div class="modal">
+    <h2>🔑 Kunlik kod</h2>
+    <div class="fl">Hozirgi kod</div>
+    <input id="curCode" readonly style="margin-bottom:10px;text-align:center;font-weight:700;color:#f59e0b" />
+    <div class="fl">Yangi kod</div>
+    <input id="newCode" placeholder="Yangi kod..." />
+    <button class="mbtn pri" onclick="saveCode()" style="margin-top:12px">💾 Saqlash</button>
+    <button class="mbtn sec" onclick="hide('ovCode')">Yopish</button>
+  </div>
+</div>
+
+<!-- ADMIN PASSWORD (admin) -->
+<div class="ov" id="ovAdminPw">
+  <div class="modal">
+    <h2>🔐 Admin parolini o'zgartirish</h2>
+    <div class="fl">Yangi admin paroli</div>
+    <div class="pwrap"><input id="newAdminPw" type="password" placeholder="Yangi parol..." /><button type="button" class="eye" onclick="togPw('newAdminPw',this)">👁</button></div>
+    <div class="fl" style="margin-top:8px">Takrorlang</div>
+    <div class="pwrap"><input id="newAdminPw2" type="password" placeholder="Yana bir bor..." /><button type="button" class="eye" onclick="togPw('newAdminPw2',this)">👁</button></div>
+    <button class="mbtn pri" onclick="saveAdminPw()" style="margin-top:12px">💾 Saqlash</button>
+    <button class="mbtn sec" onclick="hide('ovAdminPw')">Yopish</button>
+  </div>
+</div>
+
+<!-- VIEWER LINK (admin) -->
+<div class="ov" id="ovViewer">
+  <div class="modal">
+    <h2>👁 Ko'rish havolasi</h2>
+    <p style="color:#6b7280;font-size:12px;text-align:center;margin-bottom:12px">Bu havolani yuborgan odam faqat <b style="color:#38bdf8">ko'ra oladi</b> — o'quvchi qo'sha olmaydi, hech narsani o'zgartira olmaydi.</p>
+    <div class="fl">Ko'ruvchi paroli</div>
+    <div style="display:flex;gap:7px"><input id="viewerPw" placeholder="Parol..." style="flex:1" /><button class="mbtn pri" style="width:auto;margin:0;padding:11px 16px" onclick="saveViewerPw()">Saqlash</button></div>
+    <div class="box" style="margin-top:12px">
+      <div class="fl">Ulashish havolasi</div>
+      <div id="viewerLink" style="word-break:break-all;font-size:12px;color:#38bdf8;margin-bottom:8px"></div>
+      <button class="mbtn pri" onclick="copyViewerLink()">📋 Havolani nusxalash</button>
+    </div>
+    <button class="mbtn sec" onclick="hide('ovViewer')" style="margin-top:8px">Yopish</button>
+  </div>
+</div>
+
+<!-- TELEGRAM (admin) -->
+<div class="ov" id="ovTg">
+  <div class="modal">
+    <h2>📲 Telegram bildirishnoma</h2>
+    <p style="color:#6b7280;font-size:12px;text-align:center;margin-bottom:12px">Kimdir kirsa yoki o'quvchi qo'shsa — Telegramingizga xabar keladi.</p>
+    <div class="fl">Bot token (BotFather'dan)</div>
+    <input id="tgToken" placeholder="123456:ABC..." style="margin-bottom:8px" />
+    <div class="fl">Chat ID (sizning)</div>
+    <input id="tgChat" placeholder="masalan: 123456789" style="margin-bottom:8px" />
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#cbd5e1;margin:6px 0"><input type="checkbox" id="tgEnabled" style="width:auto"> Yoqilgan</label>
+    <button class="mbtn pri" onclick="saveTg()">💾 Saqlash</button>
+    <button class="mbtn sec" onclick="testTg()">📤 Sinov xabari yuborish</button>
+    <button class="mbtn sec" onclick="hide('ovTg')">Yopish</button>
+    <details style="margin-top:10px;color:#6b7280;font-size:11px"><summary style="cursor:pointer">Qanday sozlanadi?</summary>
+    <div style="margin-top:6px;line-height:1.6">1. Telegramda <b>@BotFather</b> ga /newbot yozib bot yarating, tokenni oling.<br>2. Botingizga "salom" deb yozing.<br>3. <b>@userinfobot</b> dan o'z Chat ID raqamingizni oling.<br>4. Token va Chat ID ni shu yerga kiriting, "Yoqilgan" ni belgilang.</div></details>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="hdr" id="hdr" style="display:none">
+  <div class="hdr-in">
+    <div class="hdr-top">
+      <button class="iconbtn" onclick="openDrawer()" title="Menyu">☰</button>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:10px;color:#6b7280;letter-spacing:1px;text-transform:uppercase;margin-bottom:1px" id="wLabel">Hafta</div>
+        <div style="font-size:17px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🕌 Attanal Al Arabic</div>
+      </div>
+      <button class="iconbtn" id="hBell" onclick="openNotif()" style="display:none">🔔<span class="dBadge" id="bellBadge" style="display:none;position:absolute;top:-6px;right:-6px;padding:1px 5px">0</span></button>
+      <div style="text-align:right">
+        <div style="font-size:22px;font-weight:900;color:#6366f1" id="hCount">0<span style="font-size:11px;color:#6b7280;font-weight:400">/100</span></div>
+        <div style="font-size:10px;color:#6b7280" id="hRemain">100 joy</div>
+      </div>
+    </div>
+    <div class="prog"><div class="prog-f" id="progF" style="width:0%"></div></div>
+  </div>
+</div>
+
+<!-- DRAWER -->
+<div id="drawerBg" onclick="closeDrawer()"></div>
+<div id="drawer">
+  <div class="dHead">
+    <div style="font-size:26px">🕌</div>
+    <div style="min-width:0">
+      <div style="font-weight:800;color:#fff;font-size:15px">Attanal</div>
+      <div id="dWho" style="font-size:11px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">...</div>
+    </div>
+  </div>
+
+  <button class="dItem" onclick="navTo('ovArch')"><span class="di">🗄</span> Haftalar / Arxiv</button>
+  <button class="dItem" onclick="navTo('ovSearch')"><span class="di">🔍</span> Odam qidirish</button>
+  <button class="dItem" onclick="navTo('ovAcc')"><span class="di">💰</span> Hisob-kitob</button>
+
+  <div class="dSec" id="dAdminSec" style="display:none">Admin</div>
+  <button class="dItem adminOnly" onclick="navTo('ovNotif')" style="display:none"><span class="di">🔔</span> Bildirishnomalar <span class="dBadge" id="drawerBadge" style="display:none">0</span></button>
+  <button class="dItem adminOnly" onclick="navTo('ovPending')" style="display:none"><span class="di">📨</span> So'rovlar <span class="dBadge" id="reqBadge" style="display:none">0</span></button>
+  <button class="dItem adminOnly" onclick="navTo('ovDev')" style="display:none"><span class="di">🔑</span> Qurilma parollari</button>
+  <button class="dItem adminOnly" onclick="navTo('ovViewer')" style="display:none"><span class="di">👁</span> Ko'rish havolasi</button>
+  <button class="dItem adminOnly" onclick="navTo('ovCode')" style="display:none"><span class="di">🔢</span> Kunlik kod</button>
+  <button class="dItem adminOnly" onclick="navTo('ovAdminPw')" style="display:none"><span class="di">🔐</span> Admin parol</button>
+  <button class="dItem adminOnly" onclick="navTo('ovTg')" style="display:none"><span class="di">📲</span> Telegram xabar</button>
+  <button class="dItem adminOnly" onclick="navTo('ovPerm')" style="display:none"><span class="di">⚙️</span> Eski ruxsatlar</button>
+
+  <div class="dSec">Boshqa</div>
+  <button class="dItem notViewer" onclick="exportCSV();closeDrawer()"><span class="di">📊</span> Excel yuklash</button>
+  <button class="dItem" onclick="logout()"><span class="di">🚪</span> Chiqish</button>
+</div>
+
+<!-- MAIN -->
+<div class="main" id="mainC" style="display:none">
+
+  <div class="s3">
+    <div class="sc" style="border-color:#22c55e22"><div style="font-size:18px">✅</div><div style="font-size:22px;font-weight:800;color:#22c55e" id="stPaid">0</div><div style="font-size:11px;color:#6b7280">To'lagan</div></div>
+    <div class="sc" style="border-color:#ef444422"><div style="font-size:18px">⏳</div><div style="font-size:22px;font-weight:800;color:#ef4444" id="stUnpaid">0</div><div style="font-size:11px;color:#6b7280">Kutilmoqda</div></div>
+    <div class="sc" style="border-color:#f59e0b22"><div style="font-size:18px">📝</div><div style="font-size:22px;font-weight:800;color:#f59e0b" id="stExam">0</div><div style="font-size:11px;color:#6b7280">Imtixonda</div></div>
+  </div>
+  <div class="c4" id="catGrid"></div>
+  <div class="totc">
+    <div style="font-size:13px;color:#86efac">💰 Jami yig'ilgan</div>
+    <div style="font-size:20px;font-weight:800;color:#22c55e" id="totSum">0 so'm</div>
+  </div>
+
+  <div class="abar">
+    <div style="font-size:12px;color:#9ca3af" id="aInfo">...</div>
+  </div>
+
+  <button class="addbtn notViewer" id="addBtn" onclick="toggleForm()">+ Yangi o'quvchi qo'shish</button>
+
+  <div class="fbox" id="fBox">
+    <div class="fg">
+      <input id="fName" placeholder="Ism Familiya *" />
+      <input id="fPhone" placeholder="Telefon raqami *" type="tel" inputmode="numeric" onfocus="if(!this.value)this.value='+998 '" oninput="this.value=fmtPhone(this.value)" />
+      <div><div class="fl">Kategoriya</div><div class="cbg" id="fCatBtns"></div></div>
+      <div class="pdsp" id="pDisp"><span style="font-size:13px;color:#9ca3af">To'lov summasi:</span><span id="pShow" style="font-size:20px;font-weight:900;color:#6366f1">1 450 000 so'm</span></div>
+      <input id="fCustom" placeholder="Boshqa summa (ixtiyoriy)" type="number" oninput="updPrice()" />
+      <div><div class="fl">To'lov turi</div><div class="pbg" id="fPayBtns"></div></div>
+      <input id="fNote" placeholder="Izoh (ixtiyoriy)" />
+      <button class="subbtn" id="subBtn" onclick="addStudent()">✓ Qo'shish</button>
+    </div>
+  </div>
+
+  <div class="sarea">
+    <input id="srch" placeholder="🔍 Shu haftada ism yoki telefon..." oninput="renderList()" />
+    <div class="frow" id="fRow"></div>
+  </div>
+  <div style="font-size:12px;color:#6b7280;margin-top:7px;margin-bottom:5px" id="cntTxt">0 ta</div>
+  <div class="slist" id="sList"></div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────
+const fbConfig = {
+  apiKey: "AIzaSyDjTk7bIALu_YHT49yOV4u9YvNGTD4mOsY",
+  authDomain: "attanal-al-arabic.firebaseapp.com",
+  projectId: "attanal-al-arabic",
+  storageBucket: "attanal-al-arabic.firebasestorage.app",
+  messagingSenderId: "46853290812",
+  appId: "1:46853290812:web:9f91c344c9765b37487c39"
+};
+firebase.initializeApp(fbConfig);
+const db = firebase.firestore();
+
+const DEFAULT_ADMIN = "221205AaA";   // boshlang'ich admin parol (o'zgartirish mumkin)
+const BACKUP_PASSWORD = "20077002";  // zaxira parol (har doim admin sifatida kiritadi)
+const DEFAULT_VIEWER = "attanal2026";// boshlang'ich ko'ruvchi paroli
+
+const CATS = [
+  {k:"oddiy",     l:"Oddiy",      p:1450000, c:"#6366f1", i:"👤"},
+  {k:"oqituvchi", l:"O'qituvchi", p:1400000, c:"#22c55e", i:"🎓"},
+  {k:"talaba",    l:"Talaba",     p:1400000, c:"#38bdf8", i:"📚"},
+  {k:"zinnur",    l:"Zinnur",     p:1330000, c:"#f59e0b", i:"⭐"},
+];
+const PC = {Naqd:"#22c55e",Karta:"#6366f1",Dollar:"#f59e0b"};
+const PI = {Naqd:"💵",Karta:"💳",Dollar:"💲"};
+const PTS = ["Naqd","Karta","Dollar"];
+
+// ── STATE ──────────────────────────────────────────────────────
+let user = null;
+let weeks = [];
+let curWid = null;
+let students = [];
+let unsubStudents = null;
+let selCat = "oddiy", selPay = "Naqd";
+let eCat = "oddiy", ePay = "Naqd", eId = null;
+let fStatus = "Barchasi";
+let activityItems = [];
+let shownDevPw = {};      // device password row visibility
+let accScopeVal = "cur";
+let allWeeksCache = null; // collectionGroup cache for search/accounting
+
+// ── UTILS ──────────────────────────────────────────────────────
+function show(id){document.getElementById(id).classList.add("show")}
+function hide(id){document.getElementById(id).classList.remove("show")}
+function toast(m,c="#22c55e"){const t=document.getElementById("toast");t.textContent=m;t.style.background=c;t.style.display="block";clearTimeout(window._tt);window._tt=setTimeout(()=>t.style.display="none",2800)}
+function gid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function defaultCode(){const d=new Date();const dd=String(d.getDate()).padStart(2,"0");const mm=String(d.getMonth()+1).padStart(2,"0");return "arab"+dd+mm}
+function togPw(id,btn){const el=document.getElementById(id);if(el.type==="password"){el.type="text";btn.textContent="🙈"}else{el.type="password";btn.textContent="👁"}}
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}
+
+// Telefon: +998 XX XXX XX XX
+function fmtPhone(v){
+  let d=(v||"").replace(/\D/g,"");
+  if(d.startsWith("998")) d=d.slice(3);
+  d=d.slice(0,9);
+  if(d.length===0) return "";
+  let out="+998";
+  if(d.length>0) out+=" "+d.slice(0,2);
+  if(d.length>2) out+=" "+d.slice(2,5);
+  if(d.length>5) out+=" "+d.slice(5,7);
+  if(d.length>7) out+=" "+d.slice(7,9);
+  return out;
+}
+
+// ── DRAWER ─────────────────────────────────────────────────────
+function openDrawer(){document.getElementById("drawer").classList.add("open");document.getElementById("drawerBg").classList.add("open")}
+function closeDrawer(){document.getElementById("drawer").classList.remove("open");document.getElementById("drawerBg").classList.remove("open")}
+function navTo(id){closeDrawer();if(id==="ovArch")renderArchive();if(id==="ovAcc"){accScopeVal="cur";accScope("cur")}if(id==="ovDev")loadDevList();if(id==="ovPerm")loadPermList();if(id==="ovNotif"){openNotif();return}if(id==="ovPending")showPending();if(id==="ovCode")openCode();if(id==="ovViewer")openViewer();if(id==="ovTg")openTg();if(id==="ovSearch"){document.getElementById("gsResult").innerHTML="";document.getElementById("gsInput").value=""}show(id)}
+
+// ── AUTH ───────────────────────────────────────────────────────
+async function getAdminPw(){let p=DEFAULT_ADMIN;try{const a=await db.collection("config").doc("admin").get();if(a.exists&&a.data().password)p=a.data().password}catch(e){}return p}
+async function getViewerPw(){let p=DEFAULT_VIEWER;try{const a=await db.collection("config").doc("viewer").get();if(a.exists&&a.data().password)p=a.data().password}catch(e){}return p}
+
+async function doLogin(){
+  const code = document.getElementById("inCode").value.trim();
+  if(!code){toast("Parol kiriting!","#ef4444");return}
+
+  // ADMIN or BACKUP
+  const adminPw = await getAdminPw();
+  if(code===adminPw || code===BACKUP_PASSWORD){
+    user={id:"admin",isAdmin:true,role:"admin",limit:99999,used:0,name:"Admin"};
+    localStorage.setItem("aaUser",JSON.stringify(user));
+    hide("ovLogin"); startApp(); return;
+  }
+
+  // VIEWER
+  const viewerPw = await getViewerPw();
+  if(code===viewerPw){
+    user={id:"viewer",isAdmin:false,role:"viewer",name:"Ko'ruvchi"};
+    localStorage.setItem("aaUser",JSON.stringify(user));
+    hide("ovLogin"); startApp(); return;
+  }
+
+  // DEVICE PASSWORD
+  try{
+    const snap=await db.collection("devicePasswords").get();
+    let matched=null;
+    snap.forEach(d=>{const x=d.data();if(x.password===code)matched={id:d.id,...x}});
+    if(matched){
+      user={id:matched.id,isAdmin:false,role:"device",col:"devicePasswords",name:matched.label||"Qurilma",limit:matched.limit||5,used:matched.used||0};
+      localStorage.setItem("aaUser",JSON.stringify(user));
+      logActivity("login", "🔓 "+user.name+" tizimga kirdi", user.name);
+      hide("ovLogin"); startApp(); return;
+    }
+  }catch(e){toast("Internet muammosi!","#ef4444");return}
+
+  // DAILY CODE (legacy fallback)
+  let validCode=defaultCode();
+  try{const cdoc=await db.collection("config").doc("dailyCode").get();if(cdoc.exists&&cdoc.data().code)validCode=cdoc.data().code}catch(e){}
+  if(code===validCode){
+    let devId=localStorage.getItem("aaDevId");
+    if(!devId){devId=gid();localStorage.setItem("aaDevId",devId)}
+    let perm={limit:5,used:0,name:"Qurilma_"+devId.slice(-4)};
+    try{
+      const pdoc=await db.collection("permissions").doc(devId).get();
+      if(pdoc.exists)perm=pdoc.data();
+      else await db.collection("permissions").doc(devId).set({...perm,createdAt:new Date().toISOString()});
+    }catch(e){toast("Internet muammosi!","#ef4444");return}
+    user={id:devId,isAdmin:false,role:"device",col:"permissions",limit:perm.limit,used:perm.used||0,name:perm.name||devId};
+    localStorage.setItem("aaUser",JSON.stringify(user));
+    logActivity("login","🔓 "+user.name+" (kunlik kod) kirdi", user.name);
+    hide("ovLogin"); startApp(); return;
+  }
+
+  toast("Noto'g'ri parol!","#ef4444");
+}
+
+function logout(){localStorage.removeItem("aaUser");location.href=location.pathname}
+
+// ── ACTIVITY / NOTIFICATIONS ───────────────────────────────────
+async function logActivity(type,text,device){
+  try{await db.collection("activity").add({type,text,device:device||"",createdAt:new Date().toISOString(),read:false})}catch(e){}
+  notifyTelegram(text);
+}
+async function notifyTelegram(text){
+  try{
+    const t=await db.collection("config").doc("telegram").get();
+    if(!t.exists)return; const c=t.data();
+    if(!c.enabled||!c.botToken||!c.chatId)return;
+    fetch("https://api.telegram.org/bot"+c.botToken+"/sendMessage",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({chat_id:c.chatId,text:"🕌 Attanal Al Arabic\n"+text})
+    }).catch(()=>{});
+  }catch(e){}
+}
+function listenActivity(){
+  db.collection("activity").orderBy("createdAt","desc").limit(60).onSnapshot(snap=>{
+    activityItems=[];let unread=0;
+    snap.forEach(d=>{const a={id:d.id,...d.data()};activityItems.push(a);if(!a.read)unread++});
+    const bb=document.getElementById("bellBadge");const db_=document.getElementById("drawerBadge");
+    if(unread>0){bb.style.display="inline-block";bb.textContent=unread;db_.style.display="inline-block";db_.textContent=unread}
+    else{bb.style.display="none";db_.style.display="none"}
+    if(document.getElementById("ovNotif").classList.contains("show"))renderNotif();
+  });
+}
+function openNotif(){closeDrawer();show("ovNotif");renderNotif();markNotifRead()}
+function renderNotif(){
+  const el=document.getElementById("notifList");
+  if(!activityItems.length){el.innerHTML='<div class="empty">Hozircha hech narsa yo\'q</div>';return}
+  el.innerHTML=activityItems.map(a=>`<div class="pr"><div>
+    <div style="font-size:13px;color:#fff;font-weight:600">${esc(a.text)}</div>
+    <div style="font-size:11px;color:#6b7280">${a.createdAt?new Date(a.createdAt).toLocaleString("uz-UZ"):""}</div>
+  </div>${a.read?"":'<span class="pill" style="background:#ef444422;color:#ef4444">yangi</span>'}</div>`).join("");
+}
+async function markNotifRead(){
+  const un=activityItems.filter(a=>!a.read);
+  if(!un.length)return;
+  const batch=db.batch();
+  un.forEach(a=>batch.update(db.collection("activity").doc(a.id),{read:true}));
+  try{await batch.commit()}catch(e){}
+}
+async function clearNotif(){
+  if(!confirm("Barcha bildirishnomalarni o'chirasizmi?"))return;
+  try{
+    const snap=await db.collection("activity").get();
+    const batch=db.batch();snap.forEach(d=>batch.delete(d.ref));await batch.commit();
+    toast("Tozalandi","#f59e0b");
+  }catch(e){toast("Xato","#ef4444")}
+}
+
+// ── APP START ──────────────────────────────────────────────────
+async function startApp(){
+  document.getElementById("loader").style.display="flex";
+  try{await loadWeeks()}catch(e){
+    document.getElementById("loader").innerHTML=`<div style="color:#ef4444;text-align:center;padding:20px">❌ Xato: ${esc(e.message)}<br><br><button onclick="location.reload()" style="padding:10px 20px;border-radius:8px;border:none;background:#6366f1;color:#fff;cursor:pointer">Qayta urinish</button></div>`;
+    return;
+  }
+  document.getElementById("loader").style.display="none";
+  document.getElementById("hdr").style.display="block";
+  document.getElementById("mainC").style.display="block";
+
+  // role-based UI
+  document.getElementById("dWho").textContent = user.isAdmin?"👑 Admin":(user.role==="viewer"?"👁 Ko'rish rejimi":("Qurilma: "+user.name));
+  const viewer = user.role==="viewer";
+  document.querySelectorAll(".notViewer").forEach(e=>e.style.display=viewer?"none":"");
+  if(viewer){
+    document.querySelectorAll(".adminOnly").forEach(e=>e.style.display="none");
+    document.getElementById("dAdminSec").style.display="none";
+  }
+  if(user.isAdmin){
+    document.getElementById("hBell").style.display="flex";
+    document.getElementById("dAdminSec").style.display="block";
+    document.querySelectorAll(".adminOnly").forEach(e=>e.style.display="flex");
+    listenActivity(); listenRequests();
+  }
+  renderAll(); subStudents();
+}
+
+// ── WEEKS ──────────────────────────────────────────────────────
+async function loadWeeks(){
+  const snap=await db.collection("weeks").orderBy("createdAt","desc").get();
+  weeks=[];snap.forEach(d=>weeks.push({id:d.id,...d.data()}));
+  if(weeks.length===0){curWid=await makeWeek()}else{curWid=weeks[0].id}
+}
+async function makeWeek(lbl){
+  const now=new Date();
+  const dt=now.toLocaleDateString("uz-UZ",{day:"2-digit",month:"2-digit",year:"numeric"});
+  const label=lbl||("Yakshanba "+dt);
+  const ref=db.collection("weeks").doc();
+  await ref.set({label,createdAt:now.toISOString()});
+  weeks.unshift({id:ref.id,label,createdAt:now.toISOString()});
+  return ref.id;
+}
+async function addWeek(){
+  if(!user.isAdmin){toast("Faqat admin","#ef4444");return}
+  const lbl=prompt("Hafta nomi (bo'sh = avtomatik):");
+  const wid=await makeWeek(lbl&&lbl.trim()?lbl.trim():undefined);
+  curWid=wid;fStatus="Barchasi";allWeeksCache=null;
+  subStudents();renderWkLabel();renderArchive();
+  toast("Yangi hafta yaratildi ✓");
+}
+function switchWeek(id){curWid=id;fStatus="Barchasi";subStudents();renderWkLabel();renderArchive();hide("ovArch")}
+
+// O'chirish — 3 marta so'raydi
+async function deleteWeek(id){
+  if(!user.isAdmin){toast("Faqat admin","#ef4444");return}
+  const w=weeks.find(w=>w.id===id);const nm=w?w.label:"";
+  if(!confirm(`"${nm}" haftasini o'chirasizmi?\n\nDIQQAT: ichidagi BARCHA o'quvchilar ham o'chadi!\n\n(1/3)`))return;
+  if(!confirm(`Rostdan ham o'chirasizmi?\nBu amalni ortga qaytarib BO'LMAYDI!\n\n(2/3)`))return;
+  if(!confirm(`OXIRGI MARTA so'rayapman.\n"${nm}" butunlay o'chiriladi.\n\nTasdiqlaysizmi? (3/3)`))return;
+  toast("O'chirilmoqda...","#f59e0b");
+  try{
+    const snap=await db.collection("weeks").doc(id).collection("students").get();
+    if(!snap.empty){const batch=db.batch();snap.forEach(d=>batch.delete(d.ref));await batch.commit()}
+    await db.collection("weeks").doc(id).delete();
+    weeks=weeks.filter(w=>w.id!==id);allWeeksCache=null;
+    if(curWid===id){
+      curWid=weeks[0]?weeks[0].id:null;
+      if(curWid)subStudents();else{students=[];renderStats();renderList()}
+    }
+    renderWkLabel();renderArchive();
+    logActivity("week_del","🗑 Hafta o'chirildi: "+nm,"Admin");
+    toast("Hafta o'chirildi","#f59e0b");
+  }catch(e){toast("Xato: "+e.message,"#ef4444")}
+}
+
+function subStudents(){
+  if(unsubStudents)unsubStudents();
+  if(!curWid){students=[];renderStats();renderList();return}
+  unsubStudents=db.collection("weeks").doc(curWid).collection("students").orderBy("createdAt","desc")
+    .onSnapshot(snap=>{students=[];snap.forEach(d=>students.push({id:d.id,...d.data()}));renderStats();renderList()},
+    err=>toast("Yuklashda xato: "+err.message,"#ef4444"));
+}
+
+// ── ARCHIVE ────────────────────────────────────────────────────
+function renderArchive(){
+  document.getElementById("addWeekBtn").style.display=user.isAdmin?"block":"none";
+  const el=document.getElementById("archList");
+  if(!weeks.length){el.innerHTML='<div class="empty">Hafta yo\'q</div>';return}
+  el.innerHTML=weeks.map(w=>{
+    const cur=w.id===curWid;
+    const dt=w.createdAt?new Date(w.createdAt).toLocaleDateString("uz-UZ"):"";
+    return `<div class="wkrow${cur?' cur':''}">
+      <div style="min-width:0">
+        <div style="font-weight:700;color:#fff;font-size:14px">${esc(w.label)} ${cur?'<span class="pill" style="background:#6366f122;color:#6366f1">joriy</span>':''}</div>
+        <div style="font-size:11px;color:#6b7280">${dt}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button onclick="switchWeek('${w.id}')" style="padding:6px 11px;border-radius:8px;border:1px solid #6366f1;background:transparent;color:#6366f1;font-size:12px;cursor:pointer;font-weight:700">Ko'rish</button>
+        ${user.isAdmin?`<button onclick="deleteWeek('${w.id}')" style="padding:6px 9px;border-radius:8px;border:1px solid #ef4444;background:transparent;color:#ef4444;font-size:12px;cursor:pointer">🗑</button>`:''}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ── DAILY CODE ─────────────────────────────────────────────────
+async function openCode(){
+  let cur=defaultCode();
+  try{const cd=await db.collection("config").doc("dailyCode").get();if(cd.exists&&cd.data().code)cur=cd.data().code}catch(e){}
+  document.getElementById("curCode").value=cur;
+  document.getElementById("newCode").value="";
+}
+async function saveCode(){
+  const nc=document.getElementById("newCode").value.trim();
+  if(!nc){toast("Kod kiriting","#ef4444");return}
+  await db.collection("config").doc("dailyCode").set({code:nc,updatedAt:new Date().toISOString()});
+  toast("Kod saqlandi: "+nc);hide("ovCode");
+}
+
+// ── ADMIN PASSWORD ─────────────────────────────────────────────
+async function saveAdminPw(){
+  const a=document.getElementById("newAdminPw").value.trim();
+  const b=document.getElementById("newAdminPw2").value.trim();
+  if(!a){toast("Parol kiriting","#ef4444");return}
+  if(a!==b){toast("Parollar mos emas!","#ef4444");return}
+  if(a.length<4){toast("Kamida 4 ta belgi","#ef4444");return}
+  await db.collection("config").doc("admin").set({password:a,updatedAt:new Date().toISOString()});
+  document.getElementById("newAdminPw").value="";document.getElementById("newAdminPw2").value="";
+  toast("Admin parol o'zgartirildi ✓");hide("ovAdminPw");
+}
+
+// ── VIEWER LINK ────────────────────────────────────────────────
+async function openViewer(){
+  const pw=await getViewerPw();
+  document.getElementById("viewerPw").value=pw;
+  renderViewerLink(pw);
+}
+function renderViewerLink(pw){
+  const link=location.origin+location.pathname+"?v="+encodeURIComponent(pw);
+  document.getElementById("viewerLink").textContent=link;
+}
+async function saveViewerPw(){
+  const pw=document.getElementById("viewerPw").value.trim();
+  if(!pw){toast("Parol kiriting","#ef4444");return}
+  await db.collection("config").doc("viewer").set({password:pw,updatedAt:new Date().toISOString()});
+  renderViewerLink(pw);toast("Saqlandi ✓");
+}
+function copyViewerLink(){
+  const t=document.getElementById("viewerLink").textContent;
+  navigator.clipboard.writeText(t).then(()=>toast("Havola nusxalandi 📋")).catch(()=>toast("Nusxalab bo'lmadi","#ef4444"));
+}
+
+// ── TELEGRAM ───────────────────────────────────────────────────
+async function openTg(){
+  try{const t=await db.collection("config").doc("telegram").get();
+    if(t.exists){const c=t.data();document.getElementById("tgToken").value=c.botToken||"";document.getElementById("tgChat").value=c.chatId||"";document.getElementById("tgEnabled").checked=!!c.enabled}
+  }catch(e){}
+}
+async function saveTg(){
+  const botToken=document.getElementById("tgToken").value.trim();
+  const chatId=document.getElementById("tgChat").value.trim();
+  const enabled=document.getElementById("tgEnabled").checked;
+  await db.collection("config").doc("telegram").set({botToken,chatId,enabled,updatedAt:new Date().toISOString()});
+  toast("Telegram sozlamasi saqlandi ✓");
+}
+async function testTg(){
+  await saveTg();
+  await notifyTelegram("✅ Sinov xabari — bildirishnoma ishlayapti!");
+  toast("Sinov xabari yuborildi (Telegramni tekshiring)");
+}
+
+// ── DEVICE PASSWORDS ───────────────────────────────────────────
+async function loadDevList(){
+  const el=document.getElementById("devList");el.innerHTML='<div style="color:#6b7280;text-align:center;padding:10px">Yuklanmoqda...</div>';
+  const snap=await db.collection("devicePasswords").orderBy("createdAt","desc").get();
+  let rows="";
+  snap.forEach(d=>{
+    const p=d.data();const sh=shownDevPw[d.id];
+    rows+=`<div class="pr"><div style="min-width:0">
+      <div style="font-weight:700;color:#fff;font-size:13px">${esc(p.label||d.id)}</div>
+      <div style="font-size:12px;color:#9ca3af">Parol: <b style="color:#f59e0b">${sh?esc(p.password):"••••••"}</b>
+        <button onclick="togDevPw('${d.id}')" style="border:none;background:transparent;cursor:pointer;font-size:13px">${sh?"🙈":"👁"}</button></div>
+      <div style="font-size:11px;color:#6b7280">Limit: ${p.limit} | Ishlatgan: ${p.used||0}</div>
+    </div>
+    <div style="display:flex;gap:5px;flex-shrink:0">
+      <button onclick="editDevLimit('${d.id}',${p.limit})" style="padding:4px 8px;border-radius:7px;border:1px solid #6366f1;background:transparent;color:#6366f1;font-size:11px;cursor:pointer">✏️</button>
+      <button onclick="resetDev('${d.id}')" style="padding:4px 8px;border-radius:7px;border:1px solid #f59e0b;background:transparent;color:#f59e0b;font-size:11px;cursor:pointer">↺</button>
+      <button onclick="delDev('${d.id}')" style="padding:4px 8px;border-radius:7px;border:1px solid #ef4444;background:transparent;color:#ef4444;font-size:11px;cursor:pointer">🗑</button>
+    </div></div>`;
+  });
+  el.innerHTML=`<div class="box">${rows||'<div style="color:#6b7280;text-align:center;padding:10px">Hali qurilma yo\'q</div>'}</div>`;
+}
+function togDevPw(id){shownDevPw[id]=!shownDevPw[id];loadDevList()}
+async function addDevice(){
+  const label=document.getElementById("dpName").value.trim();
+  const password=document.getElementById("dpPass").value.trim();
+  const limit=parseInt(document.getElementById("dpLimit").value)||5;
+  if(!label||!password){toast("Nom va parol kiriting!","#ef4444");return}
+  // duplicate password check
+  const snap=await db.collection("devicePasswords").get();
+  let dup=false;snap.forEach(d=>{if(d.data().password===password)dup=true});
+  if(dup||password===BACKUP_PASSWORD){toast("Bu parol band, boshqasini tanlang","#ef4444");return}
+  await db.collection("devicePasswords").doc(gid()).set({label,password,limit,used:0,createdAt:new Date().toISOString()});
+  document.getElementById("dpName").value="";document.getElementById("dpPass").value="";
+  toast("Qurilma qo'shildi: "+label);loadDevList();
+}
+async function editDevLimit(id,cur){
+  const nv=prompt("Yangi limit:",cur);
+  if(nv&&!isNaN(nv)){await db.collection("devicePasswords").doc(id).update({limit:parseInt(nv)});toast("Limit yangilandi");loadDevList()}
+}
+async function resetDev(id){
+  if(!confirm("Ishlatgan sonini 0 ga tushirasizmi?"))return;
+  await db.collection("devicePasswords").doc(id).update({used:0});toast("Tozalandi");loadDevList();
+}
+async function delDev(id){
+  if(!confirm("Bu qurilmani o'chirasizmi?"))return;
+  await db.collection("devicePasswords").doc(id).delete();toast("O'chirildi","#f59e0b");loadDevList();
+}
+
+// ── LEGACY PERMISSIONS ─────────────────────────────────────────
+async function loadPermList(){
+  const snap=await db.collection("permissions").get();
+  let rows="";
+  snap.forEach(d=>{const p=d.data();
+    rows+=`<div class="pr"><div><div style="font-weight:700;color:#fff;font-size:13px">${esc(p.name||d.id)}</div>
+    <div style="font-size:11px;color:#6b7280">Limit: ${p.limit} | Ishlatgan: ${p.used||0}</div></div>
+    <div style="display:flex;gap:6px">
+      <button onclick="editPerm('${d.id}',${p.limit})" style="padding:4px 9px;border-radius:7px;border:1px solid #6366f1;background:transparent;color:#6366f1;font-size:11px;cursor:pointer">✏️</button>
+      <button onclick="delPerm('${d.id}')" style="padding:4px 9px;border-radius:7px;border:1px solid #ef4444;background:transparent;color:#ef4444;font-size:11px;cursor:pointer">🗑</button>
+    </div></div>`;
+  });
+  document.getElementById("permList").innerHTML=`<div class="box">${rows||'<div style="color:#6b7280;text-align:center;padding:10px">Bo\'sh</div>'}</div>`;
+}
+async function editPerm(id,cur){const nv=prompt("Yangi limit:",cur);if(nv&&!isNaN(nv)){await db.collection("permissions").doc(id).update({limit:parseInt(nv)});toast("Yangilandi");loadPermList()}}
+async function delPerm(id){if(!confirm("O'chirasizmi?"))return;await db.collection("permissions").doc(id).delete();toast("O'chirildi","#f59e0b");loadPermList()}
+
+// ── REQUESTS ───────────────────────────────────────────────────
+function listenRequests(){
+  db.collection("permRequests").where("status","==","pending").onSnapshot(snap=>{
+    const n=snap.size;const rb=document.getElementById("reqBadge");
+    if(n>0){rb.style.display="inline-block";rb.textContent=n}else{rb.style.display="none"}
+  });
+}
+function showPending(){
+  show("ovPending");
+  db.collection("permRequests").where("status","==","pending").get().then(snap=>{
+    let html="";
+    snap.forEach(d=>{const r=d.data();
+      html+=`<div class="pr"><div><div style="font-weight:700;color:#fff;font-size:13px">${esc(r.deviceName||r.deviceId)}</div>
+      <div style="font-size:11px;color:#6b7280">Limit: ${r.currentLimit}</div></div>
+      <div style="display:flex;gap:6px">
+        <button onclick="approveReq('${d.id}','${r.deviceId}',${r.currentLimit},'${r.col||"permissions"}')" style="padding:5px 10px;border-radius:7px;border:1px solid #22c55e;background:transparent;color:#22c55e;font-size:11px;cursor:pointer">✓ Ruxsat</button>
+        <button onclick="rejectReq('${d.id}')" style="padding:5px 10px;border-radius:7px;border:1px solid #ef4444;background:transparent;color:#ef4444;font-size:11px;cursor:pointer">✗ Rad</button>
+      </div></div>`;
+    });
+    document.getElementById("pendingList").innerHTML=html||'<div style="color:#6b7280;text-align:center;padding:20px">So\'rov yo\'q</div>';
+  });
+}
+async function approveReq(reqId,devId,cur,col){
+  const add=parseInt(prompt("Nechta qo'shimcha?","5"))||5;
+  await db.collection(col||"permissions").doc(devId).update({limit:cur+add});
+  await db.collection("permRequests").doc(reqId).update({status:"approved"});
+  toast("Ruxsat berildi: +"+add+" ta");showPending();
+}
+async function rejectReq(reqId){await db.collection("permRequests").doc(reqId).update({status:"rejected"});toast("Rad etildi","#f59e0b");showPending()}
+async function sendPermReq(){
+  hide("ovReq");
+  await db.collection("permRequests").add({deviceId:user.id,deviceName:user.name||user.id,col:user.col||"permissions",currentLimit:user.limit,status:"pending",createdAt:new Date().toISOString()});
+  toast("Adminga so'rov yuborildi ✓");
+}
+
+// ── STUDENTS ───────────────────────────────────────────────────
+function toggleForm(){
+  if(user.role==="viewer")return;
+  const fb=document.getElementById("fBox");const ab=document.getElementById("addBtn");
+  const op=fb.classList.toggle("op");ab.classList.toggle("op",op);
+  ab.textContent=op?"✕ Yopish":"+ Yangi o'quvchi qo'shish";
+}
+async function addStudent(){
+  if(user.role==="viewer"){toast("Ko'rish rejimida qo'shib bo'lmaydi","#ef4444");return}
+  if(!curWid){toast("Avval hafta yarating","#ef4444");return}
+  const name=document.getElementById("fName").value.trim();
+  const phone=document.getElementById("fPhone").value.trim();
+  if(!name||!phone){toast("Ism va telefon kiriting!","#ef4444");return}
+  if(students.length>=100){toast("100 ta limit to'ldi!","#ef4444");return}
+
+  if(!user.isAdmin){
+    const col=user.col||"permissions";
+    let pdata;
+    try{const pd=await db.collection(col).doc(user.id).get();pdata=pd.data()||{limit:user.limit,used:0}}catch(e){toast("Xato!","#ef4444");return}
+    if((pdata.used||0)>=(pdata.limit||0)){document.getElementById("reqLim").textContent=pdata.limit||0;show("ovReq");return}
+  }
+
+  const cat=CATS.find(c=>c.k===selCat);
+  const custom=document.getElementById("fCustom").value;
+  const amount=custom?Number(custom):cat.p;
+
+  await db.collection("weeks").doc(curWid).collection("students").add({
+    name,phone,category:selCat,paymentType:selPay,amount,
+    note:document.getElementById("fNote").value.trim(),
+    paid:false,enteredExam:false,addedBy:user.id,addedByName:user.name,createdAt:new Date().toISOString()
+  });
+
+  if(!user.isAdmin){
+    await db.collection(user.col||"permissions").doc(user.id).update({used:firebase.firestore.FieldValue.increment(1)});
+    logActivity("add","➕ "+user.name+" yangi o'quvchi qo'shdi: "+name+" ("+cat.l+", "+amount.toLocaleString()+" so'm)",user.name);
+  }
+  allWeeksCache=null;
+  document.getElementById("fName").value="";
+  document.getElementById("fPhone").value="";
+  document.getElementById("fNote").value="";
+  document.getElementById("fCustom").value="";
+  toggleForm();toast(name+" qo'shildi ✓");
+}
+async function togglePaid(id){
+  if(user.role==="viewer")return;
+  const s=students.find(s=>s.id===id);
+  if(s){await db.collection("weeks").doc(curWid).collection("students").doc(id).update({paid:!s.paid});allWeeksCache=null}
+}
+async function toggleExam(id){
+  if(user.role==="viewer")return;
+  const s=students.find(s=>s.id===id);
+  if(s){await db.collection("weeks").doc(curWid).collection("students").doc(id).update({enteredExam:!s.enteredExam});allWeeksCache=null}
+}
+async function delStudent(id){
+  if(!user.isAdmin){toast("Faqat admin o'chira oladi","#ef4444");return}
+  if(!confirm("O'chirasizmi?"))return;
+  await db.collection("weeks").doc(curWid).collection("students").doc(id).delete();allWeeksCache=null;
+  toast("O'chirildi","#f59e0b");
+}
+function openEdit(id){
+  if(!user.isAdmin){toast("Faqat admin tahrirlaydi","#ef4444");return}
+  const s=students.find(s=>s.id===id);if(!s)return;
+  eId=id;eCat=s.category||"oddiy";ePay=s.paymentType||"Naqd";
+  document.getElementById("eName").value=s.name;
+  document.getElementById("ePhone").value=s.phone;
+  document.getElementById("eAmount").value=s.amount;
+  document.getElementById("eNote").value=s.note||"";
+  renderECat();renderEPay();show("ovEdit");
+}
+async function saveEdit(){
+  const name=document.getElementById("eName").value.trim();
+  const phone=document.getElementById("ePhone").value.trim();
+  if(!name||!phone){toast("Ism va telefon kiriting!","#ef4444");return}
+  const cat=CATS.find(c=>c.k===eCat);
+  const amount=document.getElementById("eAmount").value||cat.p;
+  await db.collection("weeks").doc(curWid).collection("students").doc(eId).update({name,phone,category:eCat,paymentType:ePay,amount:Number(amount),note:document.getElementById("eNote").value.trim()});
+  allWeeksCache=null;hide("ovEdit");toast("Saqlandi ✓");
+}
+
+// ── GLOBAL SEARCH (collectionGroup, all weeks) ─────────────────
+async function fetchAllStudents(force){
+  if(allWeeksCache&&!force)return allWeeksCache;
+  const out=[];
+  const snap=await db.collectionGroup("students").get();
+  snap.forEach(d=>{const wid=d.ref.parent.parent?d.ref.parent.parent.id:"";out.push({id:d.id,weekId:wid,...d.data()})});
+  allWeeksCache=out;return out;
+}
+function weekLabel(id){const w=weeks.find(w=>w.id===id);return w?w.label:"(noma'lum hafta)"}
+async function runSearch(){
+  const q=document.getElementById("gsInput").value.trim().toLowerCase();
+  const el=document.getElementById("gsResult");
+  if(!q){el.innerHTML='<div class="empty">Ism yozing</div>';return}
+  el.innerHTML='<div style="color:#6b7280;text-align:center;padding:14px">🔄 Barcha haftalardan qidirilmoqda...</div>';
+  let all;try{all=await fetchAllStudents()}catch(e){el.innerHTML='<div class="empty">Xato: '+esc(e.message)+'</div>';return}
+  const m=all.filter(s=>(s.name||"").toLowerCase().includes(q)||(s.phone||"").includes(q));
+  if(!m.length){el.innerHTML='<div class="empty">Topilmadi</div>';return}
+  const cnt=m.length;
+  const paidCnt=m.filter(s=>s.paid).length;
+  const examCnt=m.filter(s=>s.enteredExam).length;
+  const totalPaid=m.filter(s=>s.paid).reduce((a,s)=>a+Number(s.amount||0),0);
+  // sort by week date desc
+  m.sort((a,b)=>(b.createdAt||"").localeCompare(a.createdAt||""));
+  let rows=m.map(s=>{
+    const cat=CATS.find(c=>c.k===s.category)||CATS[0];
+    return `<div class="box" style="margin-top:7px;padding:10px 12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap">
+        <b style="color:#fff;font-size:14px">${esc(s.name)}</b>
+        <span class="pill" style="background:${s.paid?'#22c55e22':'#ef444422'};color:${s.paid?'#22c55e':'#ef4444'}">${s.paid?"✓ To'ladi":"○ To'lamagan"}</span>
+      </div>
+      <div style="font-size:12px;color:#9ca3af;margin-top:3px">${esc(s.phone||"")}</div>
+      <div style="font-size:12px;color:#6b7280;margin-top:3px">🗓 ${esc(weekLabel(s.weekId))} · <span style="color:${cat.c}">${cat.i} ${cat.l}</span> · <b style="color:${cat.c}">${Number(s.amount||0).toLocaleString()} so'm</b> ${s.enteredExam?'· 📝 Kirdi':''}</div>
+    </div>`;
+  }).join("");
+  el.innerHTML=`<div class="box" style="background:#16213a;border-color:#6366f155">
+    <div style="font-weight:800;color:#fff;font-size:15px;margin-bottom:6px">${esc(document.getElementById("gsInput").value.trim())}</div>
+    <div class="sgrid">
+      <div class="kv"><span style="color:#9ca3af">Marta topshirgan</span><b style="color:#6366f1">${cnt} marta</b></div>
+      <div class="kv"><span style="color:#9ca3af">To'lagan</span><b style="color:#22c55e">${paidCnt} marta</b></div>
+      <div class="kv"><span style="color:#9ca3af">Imtihonga kirgan</span><b style="color:#f59e0b">${examCnt} marta</b></div>
+      <div class="kv"><span style="color:#9ca3af">Jami to'lov</span><b style="color:#22c55e">${totalPaid.toLocaleString()} so'm</b></div>
+    </div>
+  </div>${rows}`;
+}
+
+// ── ACCOUNTING ─────────────────────────────────────────────────
+function accScope(s){
+  accScopeVal=s;
+  document.getElementById("accCur").classList.toggle("on",s==="cur");
+  document.getElementById("accAll").classList.toggle("on",s==="all");
+  renderAccounting();
+}
+async function renderAccounting(){
+  const body=document.getElementById("accBody");
+  let list;
+  if(accScopeVal==="cur"){list=students}
+  else{
+    body.innerHTML='<div style="color:#6b7280;text-align:center;padding:14px">🔄 Barcha haftalar yuklanmoqda...</div>';
+    try{list=await fetchAllStudents()}catch(e){body.innerHTML='<div class="empty">Xato</div>';return}
+  }
+  const tot=list.length;
+  const paid=list.filter(s=>s.paid);
+  const unpaid=list.filter(s=>!s.paid);
+  const collected=paid.reduce((a,s)=>a+Number(s.amount||0),0);
+  const expected=list.reduce((a,s)=>a+Number(s.amount||0),0);
+  const pending=expected-collected;
+  const exam=list.filter(s=>s.enteredExam).length;
+
+  const byPay=PTS.map(t=>{const sum=paid.filter(s=>s.paymentType===t).reduce((a,s)=>a+Number(s.amount||0),0);const c=paid.filter(s=>s.paymentType===t).length;return{t,sum,c}});
+  const byCat=CATS.map(c=>{const items=list.filter(s=>s.category===c.k);const col=items.filter(s=>s.paid).reduce((a,s)=>a+Number(s.amount||0),0);return{c,n:items.length,col}});
+
+  body.innerHTML=`
+  <div class="box" style="background:linear-gradient(135deg,#1e3a2f,#1a2a1e);border-color:#22c55e44">
+    <div class="kv"><span style="color:#86efac">💰 Yig'ilgan (to'langan)</span><b style="color:#22c55e;font-size:17px">${collected.toLocaleString()} so'm</b></div>
+    <div class="kv"><span style="color:#9ca3af">⏳ Kutilayotgan (to'lanmagan)</span><b style="color:#ef4444">${pending.toLocaleString()} so'm</b></div>
+    <div class="kv"><span style="color:#9ca3af">📊 Jami kutilgan summa</span><b style="color:#fff">${expected.toLocaleString()} so'm</b></div>
+  </div>
+  <div class="box">
+    <div class="kv"><span style="color:#9ca3af">👥 Jami odam</span><b>${tot} ta</b></div>
+    <div class="kv"><span style="color:#9ca3af">✅ To'lagan</span><b style="color:#22c55e">${paid.length} ta</b></div>
+    <div class="kv"><span style="color:#9ca3af">❌ To'lamagan</span><b style="color:#ef4444">${unpaid.length} ta</b></div>
+    <div class="kv"><span style="color:#9ca3af">📝 Imtihonga kirgan</span><b style="color:#f59e0b">${exam} ta</b></div>
+  </div>
+  <div class="box">
+    <div class="fl" style="margin-bottom:6px">💳 To'lov turi bo'yicha (to'langan)</div>
+    ${byPay.map(p=>`<div class="kv"><span style="color:#9ca3af">${PI[p.t]} ${p.t} <span style="color:#6b7280">(${p.c} ta)</span></span><b style="color:${PC[p.t]}">${p.sum.toLocaleString()} so'm</b></div>`).join("")}
+  </div>
+  <div class="box">
+    <div class="fl" style="margin-bottom:6px">🏷 Kategoriya bo'yicha</div>
+    ${byCat.map(b=>`<div class="kv"><span style="color:#9ca3af">${b.c.i} ${b.c.l} <span style="color:#6b7280">(${b.n} ta)</span></span><b style="color:${b.c.c}">${b.col.toLocaleString()} so'm</b></div>`).join("")}
+  </div>
+  <div style="text-align:center;color:#4b5563;font-size:11px;margin-top:8px">${accScopeVal==="cur"?("🗓 "+esc(weekLabel(curWid))):"🗄 Barcha haftalar jami"}</div>`;
+}
+
+// ── RENDER ─────────────────────────────────────────────────────
+function renderAll(){renderWkLabel();renderStats();renderCat();renderPay();renderECat();renderEPay();renderFilters();renderList();updPrice();renderAbar()}
+function renderWkLabel(){const cw=weeks.find(w=>w.id===curWid);document.getElementById("wLabel").textContent=cw?cw.label:"Hafta"}
+function renderStats(){
+  const tot=students.length;
+  const paid=students.filter(s=>s.paid).length;
+  const unpaid=students.filter(s=>!s.paid).length;
+  const exam=students.filter(s=>s.enteredExam).length;
+  const col=students.filter(s=>s.paid).reduce((a,s)=>a+Number(s.amount),0);
+  document.getElementById("stPaid").textContent=paid;
+  document.getElementById("stUnpaid").textContent=unpaid;
+  document.getElementById("stExam").textContent=exam;
+  document.getElementById("totSum").textContent=col.toLocaleString()+" so'm";
+  document.getElementById("hCount").innerHTML=`${tot}<span style="font-size:11px;color:#6b7280;font-weight:400">/100</span>`;
+  document.getElementById("hRemain").textContent=(100-tot)+" joy";
+  document.getElementById("hCount").style.color=tot>=90?"#ef4444":"#6366f1";
+  document.getElementById("progF").style.width=tot+"%";
+  document.getElementById("progF").style.background=tot>=90?"#ef4444":"linear-gradient(90deg,#6366f1,#8b5cf6)";
+  document.getElementById("catGrid").innerHTML=CATS.map(c=>{
+    const cnt=students.filter(s=>s.category===c.k).length;
+    return `<div class="cc" style="border-color:${c.c}33"><div style="font-size:14px">${c.i}</div><div style="font-size:16px;font-weight:800;color:${c.c}">${cnt}</div><div style="font-size:10px;color:#6b7280">${c.l}</div><div style="font-size:10px;font-weight:700;color:${c.c}">${(c.p/1000).toFixed(0)}k</div></div>`;
+  }).join("");
+}
+function renderAbar(){
+  document.getElementById("aInfo").innerHTML = user.isAdmin
+    ? `<span style="color:#f59e0b;font-weight:700">👑 Admin</span>`
+    : (user.role==="viewer"
+      ? `<span class="viewbadge">👁 Ko'rish rejimi — faqat ko'rish</span>`
+      : `Qurilma: <b style="color:#e2e8f0">${esc(user.name)}</b> | Limit: <b style="color:#6366f1">${user.used||0}/${user.limit}</b>`);
+}
+function renderCat(){document.getElementById("fCatBtns").innerHTML=CATS.map(c=>`<button class="cbtn" onclick="sCat('${c.k}')" style="border-color:${selCat===c.k?c.c:'#2d3252'};background:${selCat===c.k?c.c+'22':'transparent'};color:${selCat===c.k?c.c:'#9ca3af'}"><span>${c.i} ${c.l}</span><span style="font-size:12px">${(c.p/1000).toFixed(0)}k</span></button>`).join("")}
+function renderPay(){document.getElementById("fPayBtns").innerHTML=PTS.map(t=>`<button class="pbtn" onclick="sPay('${t}')" style="border-color:${selPay===t?PC[t]:'#2d3252'};background:${selPay===t?PC[t]+'22':'transparent'};color:${selPay===t?PC[t]:'#9ca3af'}">${PI[t]} ${t}</button>`).join("")}
+function renderECat(){const el=document.getElementById("eCatBtns");if(!el)return;el.innerHTML=CATS.map(c=>`<button class="cbtn" onclick="sECat('${c.k}')" style="border-color:${eCat===c.k?c.c:'#2d3252'};background:${eCat===c.k?c.c+'22':'transparent'};color:${eCat===c.k?c.c:'#9ca3af'}"><span>${c.i} ${c.l}</span><span style="font-size:12px">${(c.p/1000).toFixed(0)}k</span></button>`).join("")}
+function renderEPay(){const el=document.getElementById("ePayBtns");if(!el)return;el.innerHTML=PTS.map(t=>`<button class="pbtn" onclick="sEPay('${t}')" style="border-color:${ePay===t?PC[t]:'#2d3252'};background:${ePay===t?PC[t]+'22':'transparent'};color:${ePay===t?PC[t]:'#9ca3af'}">${PI[t]} ${t}</button>`).join("")}
+function renderFilters(){const opts=["Barchasi","To'lagan","To'lamagan","Imtixonda","Kelmagan",...CATS.map(c=>c.l)];document.getElementById("fRow").innerHTML=opts.map(f=>`<button class="fb${fStatus===f?' on':''}" onclick="setF('${f}')">${f}</button>`).join("")}
+function setF(f){fStatus=f;renderFilters();renderList()}
+function renderList(){
+  const srch=document.getElementById("srch").value.toLowerCase();
+  let list=students;
+  if(srch)list=list.filter(s=>s.name.toLowerCase().includes(srch)||(s.phone||"").includes(srch));
+  if(fStatus==="To'lagan")list=list.filter(s=>s.paid);
+  else if(fStatus==="To'lamagan")list=list.filter(s=>!s.paid);
+  else if(fStatus==="Imtixonda")list=list.filter(s=>s.enteredExam);
+  else if(fStatus==="Kelmagan")list=list.filter(s=>!s.enteredExam);
+  else{const c=CATS.find(c=>c.l===fStatus);if(c)list=list.filter(s=>s.category===c.k)}
+  document.getElementById("cntTxt").textContent=list.length+" ta o'quvchi";
+  if(!list.length){document.getElementById("sList").innerHTML=`<div class="empty">${students.length===0?"Hali hech kim qo'shilmagan":"Natija topilmadi"}</div>`;return}
+  const isA=user&&user.isAdmin;
+  const isV=user&&user.role==="viewer";
+  document.getElementById("sList").innerHTML=list.map(s=>{
+    const cat=CATS.find(c=>c.k===s.category)||CATS[0];
+    const idx=students.indexOf(s)+1;
+    return `<div class="scard${s.paid?' paid':''}"><div class="sinner">
+      <div class="sinfo">
+        <div class="stags">
+          <span style="font-size:12px;color:#6b7280">#${idx}</span>
+          <span style="font-weight:700;font-size:15px;color:#fff">${esc(s.name)}</span>
+          <span class="bdg" style="background:${cat.c}22;color:${cat.c}">${cat.i} ${cat.l}</span>
+          <span class="bdg" style="background:${(PC[s.paymentType]||'#6366f1')}22;color:${PC[s.paymentType]||'#6366f1'}">${PI[s.paymentType]||'💵'} ${esc(s.paymentType)}</span>
+          ${s.enteredExam?`<span class="bdg" style="background:#f59e0b22;color:#f59e0b">📝 Kirdi</span>`:''}
+        </div>
+        <div style="font-size:12px;color:#9ca3af;margin-top:2px">${esc(s.phone)}</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:3px">
+          <span style="font-size:13px;font-weight:700;color:${s.paid?'#22c55e':'#ef4444'}">${s.paid?"✓ To'ladi":"○ To'lamagan"}</span>
+          <span style="font-size:13px;font-weight:800;color:${cat.c}">${Number(s.amount).toLocaleString()} so'm</span>
+          ${s.note?`<span style="font-size:11px;color:#6b7280;font-style:italic">"${esc(s.note)}"</span>`:''}
+        </div>
+        <div style="font-size:10px;color:#374151;margin-top:2px">${s.createdAt?new Date(s.createdAt).toLocaleString("uz-UZ"):''}${s.addedByName?' · '+esc(s.addedByName):''}</div>
+      </div>
+      ${isV?'':`<div class="sacts">
+        <button class="abtn" onclick="togglePaid('${s.id}')" style="border:1px solid ${s.paid?'#22c55e':'#6b7280'};color:${s.paid?'#22c55e':'#9ca3af'};background:${s.paid?'#22c55e22':'transparent'}">${s.paid?"✓ To'ladi":"To'ladi?"}</button>
+        <button class="abtn" onclick="toggleExam('${s.id}')" style="border:1px solid ${s.enteredExam?'#f59e0b':'#6b7280'};color:${s.enteredExam?'#f59e0b':'#9ca3af'};background:${s.enteredExam?'#f59e0b22':'transparent'}">${s.enteredExam?"📝 Kirdi":"Imtixon?"}</button>
+        ${isA?`<button class="abtn" onclick="openEdit('${s.id}')" style="border:1px solid #6366f144;color:#6366f1">✏️</button>`:''}
+        ${isA?`<button class="abtn" onclick="delStudent('${s.id}')" style="border:1px solid #ef444433;color:#ef4444">🗑</button>`:''}
+      </div>`}
+    </div></div>`;
+  }).join("");
+}
+function sCat(k){selCat=k;renderCat();document.getElementById("fCustom").value="";updPrice()}
+function sPay(t){selPay=t;renderPay()}
+function sECat(k){eCat=k;renderECat()}
+function sEPay(t){ePay=t;renderEPay()}
+function updPrice(){
+  const cat=CATS.find(c=>c.k===selCat);
+  const custom=document.getElementById("fCustom").value;
+  const price=custom?Number(custom):cat.p;
+  const pd=document.getElementById("pDisp");
+  pd.style.background=cat.c+"18";pd.style.border="1px solid "+cat.c+"44";
+  document.getElementById("pShow").textContent=price.toLocaleString()+" so'm";
+  document.getElementById("pShow").style.color=cat.c;
+  document.getElementById("subBtn").textContent="✓ Qo'shish — "+price.toLocaleString()+" so'm";
+  document.getElementById("subBtn").style.background="linear-gradient(135deg,"+cat.c+",#8b5cf6)";
+}
+
+// ── EXCEL ──────────────────────────────────────────────────────
+function exportCSV(){
+  if(user.role==="viewer")return;
+  const w=weeks.find(w=>w.id===curWid);
+  let csv="№,Ism,Telefon,Kategoriya,To'lov turi,Summa,To'ladi,Imtixon,Sana\n";
+  students.forEach((s,i)=>{const cat=CATS.find(c=>c.k===s.category)||CATS[0];csv+=`${i+1},"${s.name}","${s.phone}","${cat.l}","${s.paymentType}",${s.amount},"${s.paid?'Ha':'Yoq'}","${s.enteredExam?'Ha':'Yoq'}","${s.createdAt?new Date(s.createdAt).toLocaleString('uz-UZ'):''}"\n`});
+  const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);const a=document.createElement("a");
+  a.href=url;a.download=(w?w.label:"hafta").replace(/\s/g,"_")+".csv";a.click();URL.revokeObjectURL(url);
+  toast("Excel yuklab olindi 📊");
+}
+
+// ── PWA ────────────────────────────────────────────────────────
+if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
+
+// ── STARTUP ────────────────────────────────────────────────────
+(async function init(){
+  // viewer link: ?v=PASSWORD → auto read-only login
+  const params=new URLSearchParams(location.search);
+  const v=params.get("v");
+  if(v){
+    try{
+      const vpw=await getViewerPw();
+      if(v===vpw){
+        user={id:"viewer",isAdmin:false,role:"viewer",name:"Ko'ruvchi"};
+        document.getElementById("loader").style.display="flex";
+        await startApp();return;
+      }
+    }catch(e){}
+  }
+  const saved=localStorage.getItem("aaUser");
+  if(saved){
+    try{user=JSON.parse(saved);startApp()}
+    catch(e){document.getElementById("loader").style.display="none";show("ovLogin")}
+  }else{document.getElementById("loader").style.display="none";show("ovLogin")}
+})();
+</script>
+</body>
+</html>
