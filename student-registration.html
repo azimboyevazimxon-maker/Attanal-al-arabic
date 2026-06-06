@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="uz" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attanal Al-Arabic — Imtihon Ro'yxati</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8C97A;
+    --gold-dark: #8B6914;
+    --green: #1A5C3A;
+    --green-light: #2D8B5E;
+    --green-mid: #236B48;
+    --bg: #F7F3EA;
+    --bg-card: #FFFFFF;
+    --text: #1C1C1C;
+    --text-muted: #6B6350;
+    --border: rgba(201,168,76,0.25);
+    --radius: 16px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Georgia', serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  /* DECORATIVE HEADER */
+  .site-header {
+    background: linear-gradient(135deg, var(--green) 0%, var(--green-mid) 60%, var(--green-light) 100%);
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .site-header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M30 5 L35 20 L50 20 L38 29 L43 44 L30 35 L17 44 L22 29 L10 20 L25 20Z' fill='none' stroke='rgba(201,168,76,0.12)' stroke-width='1'/%3E%3C/svg%3E") repeat;
+    opacity: 0.6;
+  }
+  .header-inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 28px;
+  }
+  .logo-area {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .logo-circle {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    font-weight: bold;
+    color: #fff;
+    border: 2px solid rgba(255,255,255,0.3);
+    flex-shrink: 0;
+  }
+  .logo-text h1 {
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+  }
+  .logo-text p {
+    color: rgba(255,255,255,0.75);
+    font-size: 12px;
+    font-family: sans-serif;
+  }
+  /* NAV HAMBURGER */
+  .nav-toggle {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 5px;
+    transition: background 0.2s;
+  }
+  .nav-toggle:hover { background: rgba(255,255,255,0.25); }
+  .nav-toggle span {
+    display: block; width: 20px; height: 2px;
+    background: #fff; border-radius: 2px;
+  }
+  /* SLIDE-OUT PANEL */
+  .side-panel {
+    position: fixed;
+    top: 0; right: -360px;
+    width: 340px; height: 100vh;
+    background: #fff;
+    z-index: 1000;
+    box-shadow: -4px 0 40px rgba(0,0,0,0.18);
+    transition: right 0.35s cubic-bezier(.4,0,.2,1);
+    overflow-y: auto;
+    border-left: 3px solid var(--gold);
+  }
+  .side-panel.open { right: 0; }
+  .panel-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 999;
+  }
+  .panel-overlay.open { display: block; }
+  .panel-header {
+    background: linear-gradient(135deg, var(--green) 0%, var(--green-light) 100%);
+    padding: 22px 22px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .panel-header h2 { color: #fff; font-size: 17px; }
+  .panel-close {
+    background: rgba(255,255,255,0.2);
+    border: none; color: #fff;
+    width: 34px; height: 34px;
+    border-radius: 8px; cursor: pointer;
+    font-size: 18px; font-weight: bold;
+  }
+  .panel-section {
+    padding: 18px 22px;
+    border-bottom: 1px solid #f0ebe0;
+  }
+  .panel-section h3 {
+    font-size: 13px;
+    font-family: sans-serif;
+    font-weight: 600;
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+  .panel-step {
+    display: flex; gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 14px;
+  }
+  .step-num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: #fff; font-size: 12px;
+    font-weight: bold; font-family: sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .step-text { font-size: 14px; color: #444; line-height: 1.6; font-family: sans-serif; }
+  .step-text strong { color: var(--green); font-weight: 600; }
+  /* ADMIN STATS IN PANEL */
+  .admin-stat {
+    background: #f8f5ee;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .admin-stat-label { font-size: 13px; color: #666; font-family: sans-serif; }
+  .admin-stat-value { font-size: 22px; font-weight: bold; color: var(--green); }
+  .admin-table {
+    width: 100%; border-collapse: collapse; font-size: 13px; font-family: sans-serif;
+  }
+  .admin-table th {
+    background: var(--green); color: #fff; padding: 8px 10px; text-align: left;
+  }
+  .admin-table td { padding: 8px 10px; border-bottom: 1px solid #f0ebe0; }
+  .admin-table tr:nth-child(even) td { background: #faf7f0; }
+  /* NOTIFY SECTION */
+  .notify-form {
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .notify-form textarea {
+    width: 100%; padding: 10px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px; font-size: 14px;
+    font-family: sans-serif; resize: vertical;
+    min-height: 80px; outline: none;
+  }
+  .notify-form textarea:focus { border-color: var(--gold); }
+  .btn-notify {
+    background: var(--green);
+    color: #fff; border: none;
+    padding: 10px 18px;
+    border-radius: 10px; font-size: 14px;
+    font-family: sans-serif; cursor: pointer;
+    font-weight: 600; transition: background 0.2s;
+  }
+  .btn-notify:hover { background: var(--green-light); }
+  /* MAIN CONTENT */
+  .main-wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 28px 18px 60px;
+  }
+  /* EXAM INFO BANNER */
+  .exam-banner {
+    background: linear-gradient(135deg, var(--green) 0%, var(--green-mid) 100%);
+    border-radius: var(--radius);
+    padding: 24px 26px;
+    margin-bottom: 22px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .exam-banner::after {
+    content: '✦';
+    position: absolute; right: 22px; top: 16px;
+    font-size: 48px; opacity: 0.12;
+  }
+  .exam-banner .exam-time {
+    font-size: 28px; font-weight: bold;
+    margin-bottom: 6px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .exam-banner .exam-time .time-badge {
+    background: var(--gold);
+    color: #fff; font-size: 14px;
+    padding: 3px 12px; border-radius: 20px;
+    font-family: sans-serif;
+  }
+  .exam-banner .exam-msg {
+    font-size: 14px; opacity: 0.85;
+    font-family: sans-serif;
+  }
+  .exam-banner .waiting-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 8px; padding: 5px 12px;
+    font-size: 13px; font-family: sans-serif;
+    margin-top: 12px;
+  }
+  .dot-pulse {
+    width: 8px; height: 8px;
+    border-radius: 50%; background: var(--gold-light);
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.7); }
+  }
+  /* CARD */
+  .card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .card-head {
+    background: linear-gradient(90deg, var(--green) 0%, var(--green-mid) 100%);
+    padding: 14px 22px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .card-head-icon {
+    width: 34px; height: 34px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .card-head h2 {
+    color: #fff; font-size: 15px;
+    font-family: sans-serif; font-weight: 600;
+  }
+  .card-head p {
+    color: rgba(255,255,255,0.75);
+    font-size: 12px; font-family: sans-serif;
+  }
+  .card-body { padding: 22px; }
+  /* QR SECTION */
+  .qr-wrap {
+    display: flex; gap: 24px; align-items: center;
+    flex-wrap: wrap;
+  }
+  .qr-box {
+    background: #fff;
+    border: 2px solid var(--gold);
+    border-radius: 14px;
+    padding: 14px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+  }
+  #qrcode canvas, #qrcode img {
+    border-radius: 8px;
+  }
+  .qr-hint {
+    font-size: 12px; color: var(--text-muted);
+    font-family: sans-serif; text-align: center;
+  }
+  .link-box {
+    flex: 1; min-width: 200px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .link-display {
+    background: #f7f3ea;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-family: monospace;
+    color: var(--green);
+    word-break: break-all;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .copy-btn {
+    background: var(--green);
+    color: #fff; border: none;
+    padding: 6px 14px; border-radius: 8px;
+    font-size: 12px; font-family: sans-serif;
+    cursor: pointer; font-weight: 600;
+    white-space: nowrap; transition: background 0.2s;
+  }
+  .copy-btn:hover { background: var(--green-light); }
+  .badge-green {
+    display: inline-block;
+    background: #e8f5ee; color: var(--green);
+    font-size: 12px; font-family: sans-serif;
+    padding: 3px 10px; border-radius: 20px;
+    font-weight: 600; border: 1px solid rgba(26,92,58,0.2);
+  }
+  /* FORM */
+  .form-group { margin-bottom: 16px; }
+  .form-label {
+    display: block;
+    font-size: 13px; font-family: sans-serif;
+    font-weight: 600; color: #555;
+    margin-bottom: 6px;
+  }
+  .form-label .req { color: #c0392b; }
+  .form-input {
+    width: 100%; padding: 11px 14px;
+    border: 1.5px solid #ddd;
+    border-radius: 10px;
+    font-size: 15px; font-family: sans-serif;
+    color: var(--text);
+    transition: border-color 0.2s;
+    outline: none;
+    background: #fafafa;
+  }
+  .form-input:focus { border-color: var(--gold); background: #fff; }
+  .form-input.error { border-color: #e74c3c; background: #fff5f5; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
+  .form-hint {
+    font-size: 12px; color: #999;
+    font-family: sans-serif; margin-top: 4px;
+  }
+  /* STATUS SECTION */
+  .status-options {
+    display: flex; gap: 12px; flex-wrap: wrap;
+  }
+  .status-btn {
+    flex: 1; min-width: 130px;
+    padding: 16px 14px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: #fafaf7;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    font-family: sans-serif;
+  }
+  .status-btn:hover { border-color: var(--gold); }
+  .status-btn.selected-yes {
+    border-color: var(--green);
+    background: #e8f5ee;
+  }
+  .status-btn.selected-no {
+    border-color: #e74c3c;
+    background: #fff5f5;
+  }
+  .status-btn .status-icon { font-size: 28px; margin-bottom: 6px; }
+  .status-btn .status-label { font-size: 14px; font-weight: 600; }
+  .status-btn .status-sub { font-size: 11px; color: #999; margin-top: 2px; }
+  .altanal-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--gold);
+    color: #fff; text-decoration: none;
+    padding: 10px 18px; border-radius: 10px;
+    font-size: 14px; font-family: sans-serif;
+    font-weight: 600; transition: background 0.2s;
+    margin-top: 12px;
+  }
+  .altanal-link:hover { background: var(--gold-dark); }
+  /* ID CARD */
+  .id-result {
+    display: none;
+  }
+  .id-card {
+    background: linear-gradient(135deg, var(--green) 0%, var(--green-mid) 40%, #1d4a2f 100%);
+    border-radius: 18px;
+    padding: 28px 26px 22px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 16px;
+    border: 2px solid var(--gold);
+  }
+  .id-card::before {
+    content: '';
+    position: absolute; top: -30px; right: -30px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
+  .id-card-top {
+    display: flex; align-items: flex-start;
+    justify-content: space-between; margin-bottom: 20px;
+  }
+  .id-card-name { font-size: 19px; font-weight: bold; margin-bottom: 4px; }
+  .id-card-passport { font-size: 13px; opacity: 0.75; font-family: sans-serif; }
+  .id-chip {
+    background: var(--gold);
+    border-radius: 8px; padding: 6px 12px;
+    font-size: 11px; font-family: sans-serif;
+    font-weight: bold; letter-spacing: 1px;
+  }
+  .id-numbers {
+    display: flex; gap: 14px; margin-top: 12px;
+  }
+  .id-num-box {
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px; padding: 12px 16px;
+    flex: 1; text-align: center;
+  }
+  .id-num-label {
+    font-size: 11px; opacity: 0.7;
+    font-family: sans-serif; margin-bottom: 4px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .id-num-value {
+    font-size: 15px; font-weight: bold;
+  }
+  /* OCHRED BIG NUMBER */
+  .ochred-big {
+    text-align: center;
+    padding: 24px 0 8px;
+  }
+  .ochred-big .ochred-label {
+    font-size: 13px; color: var(--text-muted);
+    font-family: sans-serif; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .ochred-big .ochred-number {
+    font-size: 72px; font-weight: bold;
+    color: var(--green);
+    line-height: 1;
+    font-family: 'Georgia', serif;
+  }
+  .ochred-big .ochred-sub {
+    font-size: 13px; color: var(--text-muted);
+    font-family: sans-serif; margin-top: 6px;
+  }
+  .ochred-divider {
+    height: 1px; background: var(--border); margin: 14px 0;
+  }
+  /* SUBMIT BUTTON */
+  .btn-submit {
+    width: 100%;
+    background: linear-gradient(135deg, var(--green) 0%, var(--green-light) 100%);
+    color: #fff; border: none;
+    padding: 16px 28px;
+    border-radius: 12px;
+    font-size: 16px; font-family: sans-serif;
+    font-weight: 700; cursor: pointer;
+    transition: transform 0.15s, opacity 0.2s;
+    margin-top: 8px;
+    letter-spacing: 0.3px;
+  }
+  .btn-submit:hover { opacity: 0.92; transform: translateY(-1px); }
+  .btn-submit:active { transform: translateY(0); }
+  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  /* ERROR / SUCCESS MSG */
+  .msg-box {
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-size: 14px; font-family: sans-serif;
+    margin-top: 14px; display: none;
+  }
+  .msg-box.success {
+    background: #e8f5ee; border: 1.5px solid rgba(26,92,58,0.25);
+    color: var(--green);
+  }
+  .msg-box.error {
+    background: #fff0f0; border: 1.5px solid rgba(231,76,60,0.25);
+    color: #c0392b;
+  }
+  .msg-box.show { display: block; }
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--green);
+    color: #fff; padding: 12px 24px;
+    border-radius: 30px; font-family: sans-serif;
+    font-size: 14px; font-weight: 600;
+    z-index: 9999; transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 6px 30px rgba(0,0,0,0.25);
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  /* CLOSED BANNER */
+  .closed-banner {
+    background: #fff3cd; border: 1.5px solid #ffc107;
+    border-radius: 12px; padding: 16px 20px;
+    display: flex; gap: 12px; align-items: flex-start;
+    margin-bottom: 18px;
+  }
+  .closed-banner .cb-icon { font-size: 22px; flex-shrink: 0; }
+  .closed-banner .cb-text { font-size: 14px; font-family: sans-serif; color: #856404; }
+  .closed-banner .cb-text strong { font-weight: 700; }
+  /* PROGRESS INDICATOR */
+  .progress-steps {
+    display: flex; justify-content: center;
+    gap: 8px; margin-bottom: 22px; flex-wrap: wrap;
+  }
+  .p-step {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #ddd; transition: background 0.3s;
+    flex-shrink: 0;
+  }
+  .p-step.done { background: var(--gold); }
+  .p-step.active { background: var(--green); width: 26px; border-radius: 5px; }
+  /* FOOTER NOTE */
+  .foot-note {
+    text-align: center; font-size: 12px;
+    color: var(--text-muted); font-family: sans-serif;
+    padding-top: 28px; line-height: 1.7;
+  }
+  .foot-note a { color: var(--green); text-decoration: none; }
+  /* Notification sent UI */
+  .notif-item {
+    background: #f8f5ee; border-radius: 10px;
+    padding: 10px 14px; margin-bottom: 8px;
+    font-size: 13px; font-family: sans-serif;
+    border-left: 3px solid var(--gold);
+    color: #444;
+  }
+  .notif-item .notif-time { font-size: 11px; color: #999; margin-top: 3px; }
+  /* exam date input */
+  .admin-date-row {
+    display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;
+  }
+  .admin-date-row .form-input { flex: 1; min-width: 160px; }
+  .btn-set-date {
+    background: var(--gold); color: #fff;
+    border: none; padding: 11px 18px;
+    border-radius: 10px; font-size: 14px;
+    font-family: sans-serif; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+    transition: background 0.2s;
+  }
+  .btn-set-date:hover { background: var(--gold-dark); }
+  /* Registration locked */
+  .reg-locked {
+    display: none;
+    background: #fff0f0; border: 1.5px solid rgba(231,76,60,0.2);
+    border-radius: 12px; padding: 18px 20px;
+    text-align: center; font-family: sans-serif;
+  }
+  .reg-locked h3 { color: #c0392b; font-size: 16px; margin-bottom: 8px; }
+  .reg-locked p { font-size: 14px; color: #666; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo-area">
+      <div class="logo-circle">ع</div>
+      <div class="logo-text">
+        <h1>Attanal Al-Arabic</h1>
+        <p>Imtihon Ro'yxatga Olish Tizimi</p>
+      </div>
+    </div>
+    <button class="nav-toggle" onclick="openPanel()" aria-label="Menyu ochish">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<!-- SLIDE-OUT PANEL -->
+<div class="panel-overlay" id="panelOverlay" onclick="closePanel()"></div>
+<div class="side-panel" id="sidePanel">
+  <div class="panel-header">
+    <h2>📋 Admin Panel & Yo'riqnoma</h2>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+
+  <!-- EXAM DATE CONTROL -->
+  <div class="panel-section">
+    <h3>⚙️ Imtihon Kunini Belgilash</h3>
+    <p style="font-size:13px;color:#666;font-family:sans-serif;margin-bottom:12px;">
+      Faqat shu sanada ro'yxatdan o'tish mumkin bo'ladi. Talabalar faqat imtihon kuni ro'yxat olishi mumkin.
+    </p>
+    <div class="admin-date-row">
+      <input type="date" class="form-input" id="examDateInput" style="font-family:sans-serif;">
+      <input type="time" class="form-input" id="examTimeInput" value="11:00" style="font-family:sans-serif;max-width:110px;">
+      <button class="btn-set-date" onclick="setExamDate()">Belgilash</button>
+    </div>
+    <div id="currentExamDate" style="font-size:13px;color:var(--green);font-family:sans-serif;margin-top:10px;"></div>
+  </div>
+
+  <!-- ADMIN STATS -->
+  <div class="panel-section">
+    <h3>📊 Statistika</h3>
+    <div class="admin-stat">
+      <span class="admin-stat-label">Jami kutayotganlar</span>
+      <span class="admin-stat-value" id="statTotal">0</span>
+    </div>
+    <div class="admin-stat">
+      <span class="admin-stat-label">Bugun ro'yxatdan o'tganlar</span>
+      <span class="admin-stat-value" id="statToday">0</span>
+    </div>
+  </div>
+
+  <!-- REGISTERED LIST -->
+  <div class="panel-section">
+    <h3>👥 Ro'yxat (Oxirgi 10 ta)</h3>
+    <div style="overflow-x:auto;">
+      <table class="admin-table" id="adminTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Ismi</th>
+            <th>ID</th>
+            <th>Sana</th>
+          </tr>
+        </thead>
+        <tbody id="adminTableBody">
+          <tr><td colspan="4" style="text-align:center;color:#999;padding:16px;">Hali hech kim yo'q</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION SEND -->
+  <div class="panel-section">
+    <h3>📢 Bildirishnoma Yuborish</h3>
+    <p style="font-size:13px;color:#666;font-family:sans-serif;margin-bottom:12px;">
+      Ro'yxatdan o'tgan barcha talabalarga xabar yuboring. Xabar navbatdagi kirish paytida ko'rinadi.
+    </p>
+    <div class="notify-form">
+      <textarea id="notifyMsg" placeholder="Misol: Imtihonga qabul 15 daqiqadan so'ng boshlanadi. Hujjatlaringizni tayyorlab qo'ying..."></textarea>
+      <button class="btn-notify" onclick="sendNotification()">📤 Yuborish</button>
+    </div>
+    <div id="notifHistory" style="margin-top:14px;"></div>
+  </div>
+
+  <!-- INSTRUCTIONS -->
+  <div class="panel-section">
+    <h3>📖 Yo'riqnoma — Talaba uchun</h3>
+    <div class="panel-step">
+      <div class="step-num">1</div>
+      <div class="step-text"><strong>QR Kod yoki link</strong> orqali sahifaga kiring</div>
+    </div>
+    <div class="panel-step">
+      <div class="step-num">2</div>
+      <div class="step-text"><strong>Ma'lumotlaringizni</strong> to'ldiring: ism, familiya, pasport seriyasi</div>
+    </div>
+    <div class="panel-step">
+      <div class="step-num">3</div>
+      <div class="step-text"><strong>Altanal reg</strong> saytida ro'yxatdan o'tganligingizni tasdiqlang</div>
+    </div>
+    <div class="panel-step">
+      <div class="step-num">4</div>
+      <div class="step-text"><strong>Shaxsiy ID</strong> va navbat raqamingizni oling</div>
+    </div>
+    <div class="panel-step">
+      <div class="step-num">5</div>
+      <div class="step-text">Bildirishnomani kuting va imtihonga o'z vaqtida keling</div>
+    </div>
+  </div>
+
+  <div style="padding:16px 22px;font-size:12px;color:#999;font-family:sans-serif;text-align:center;">
+    Attanal Al-Arabic © 2025 — Barcha huquqlar himoyalangan
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main-wrap" id="mainContent">
+
+  <!-- PROGRESS DOTS -->
+  <div class="progress-steps" id="progressDots">
+    <div class="p-step active" id="dot0"></div>
+    <div class="p-step" id="dot1"></div>
+    <div class="p-step" id="dot2"></div>
+    <div class="p-step" id="dot3"></div>
+  </div>
+
+  <!-- NOTIFICATION BANNER -->
+  <div id="notifBanner" style="display:none;background:linear-gradient(90deg,var(--green),var(--green-mid));border-radius:12px;padding:14px 18px;margin-bottom:18px;color:#fff;font-family:sans-serif;font-size:14px;display:none;">
+    <div style="font-weight:700;margin-bottom:4px;">📢 Yangi Xabar</div>
+    <div id="notifBannerText"></div>
+  </div>
+
+  <!-- CLOSED BANNER (shown when registration not available) -->
+  <div class="closed-banner" id="closedBanner" style="display:none;">
+    <div class="cb-icon">🔒</div>
+    <div class="cb-text">
+      <strong>Ro'yxatga olish hali ochiq emas.</strong><br>
+      Ro'yxatga olish faqat imtihon kuni boshlanadi. Admin tomonidan sana belgilanishi kutilmoqda.
+    </div>
+  </div>
+
+  <!-- STEP 0: EXAM INFO -->
+  <div id="step0">
+    <!-- EXAM INFO BANNER -->
+    <div class="exam-banner" id="examBanner">
+      <div class="exam-time">
+        <span id="examTimeDisplay">⏰ Imtihon</span>
+        <span class="time-badge" id="examTimeBadge">Kutilmoqda</span>
+      </div>
+      <div class="exam-msg" id="examMsgText">
+        Assalomu alaykum! Attanal Al-Arabic imtihon tizimiga xush kelibsiz.<br>
+        Ro'yxatdan o'tish uchun quyidagi bosqichlarni bajaring.
+      </div>
+      <div class="waiting-tag">
+        <div class="dot-pulse"></div>
+        <span id="waitingText">Sana belgilanishi kutilmoqda</span>
+      </div>
+    </div>
+
+    <!-- QR & LINK CARD -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-icon">📱</div>
+        <div>
+          <h2>QR Kod va Havola</h2>
+          <p>Skanerlash yoki nusxa ko'chirish orqali ulashing</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="qr-wrap">
+          <div class="qr-box">
+            <div id="qrcode"></div>
+            <div class="qr-hint">📲 Kamera bilan skaner qiling</div>
+            <span class="badge-green">♻️ Ko'p marta ishlatiladi</span>
+          </div>
+          <div class="link-box">
+            <div>
+              <div class="form-label">Sahifa havolasi:</div>
+              <div class="link-display">
+                <span id="pageUrl">...</span>
+                <button class="copy-btn" onclick="copyLink()">Nusxa</button>
+              </div>
+            </div>
+            <div style="font-size:13px;color:var(--text-muted);font-family:sans-serif;line-height:1.6;">
+              ✅ QR kod bir marta yaratilib, <strong>cheksiz</strong> marta ishlatiladi.<br>
+              ✅ Havola orqali ham kirib, ro'yxatdan o'tish mumkin.
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:18px;">
+          <button class="btn-submit" onclick="goToStep(1)">
+            Ro'yxatdan O'tishni Boshlash →
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 1: STUDENT INFO -->
+  <div id="step1" style="display:none;">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-icon">👤</div>
+        <div>
+          <h2>Talaba Ma'lumotlari</h2>
+          <p>Pasportdagi ma'lumotlarni aniq va to'liq kiriting</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Familiya <span class="req">*</span></label>
+            <input class="form-input" type="text" id="surname" placeholder="YUSUPOV" autocomplete="off">
+            <div class="form-hint">Pasportdagi kabi katta harfda yozing</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Ism <span class="req">*</span></label>
+            <input class="form-input" type="text" id="firstname" placeholder="JASUR" autocomplete="off">
+            <div class="form-hint">Pasportdagi kabi yozing</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Otasining ismi</label>
+            <input class="form-input" type="text" id="patronymic" placeholder="BAXTIYOROVICH" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pasport seriya <span class="req">*</span></label>
+            <input class="form-input" type="text" id="passport" placeholder="AB1234567" maxlength="9" autocomplete="off" oninput="this.value=this.value.toUpperCase()">
+            <div class="form-hint">Misol: AB1234567</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Telefon raqami <span class="req">*</span></label>
+          <input class="form-input" type="tel" id="phone" placeholder="+998901234567" autocomplete="off">
+        </div>
+        <div id="msg1" class="msg-box"></div>
+        <button class="btn-submit" onclick="goToStep2()">Keyingi Qadam →</button>
+        <div style="text-align:center;margin-top:14px;">
+          <button onclick="goToStep(0)" style="background:none;border:none;color:var(--text-muted);font-size:13px;font-family:sans-serif;cursor:pointer;">← Orqaga</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: ALTANAL CHECK -->
+  <div id="step2" style="display:none;">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-icon">✅</div>
+        <div>
+          <h2>Altanal Reg Tasdiqlash</h2>
+          <p>https://altanal_reg.eexam.uk/ saytida ro'yxat tekshiriladi</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="background:#f7f3ea;border-radius:12px;padding:16px 18px;margin-bottom:20px;font-family:sans-serif;font-size:14px;color:#555;line-height:1.7;border-left:3px solid var(--gold);">
+          <strong style="color:var(--green);">⚠️ Majburiy shart:</strong><br>
+          Imtihonga kirish uchun <strong>altanal_reg.eexam.uk</strong> saytida ro'yxatdan o'tgan bo'lishingiz <strong>shart</strong>. Ro'yxatdan o'tmaganlar imtihonga qabul qilinmaydi.
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <div class="form-label" style="margin-bottom:10px;">Siz shu saytda ro'yxatdan o'tganmisiz?</div>
+          <div class="status-options">
+            <div class="status-btn" id="btnYes" onclick="selectStatus('yes')">
+              <div class="status-icon">✅</div>
+              <div class="status-label" style="color:var(--green);">Ha, o'tdim</div>
+              <div class="status-sub">Ro'yxatdan o'tganman</div>
+            </div>
+            <div class="status-btn" id="btnNo" onclick="selectStatus('no')">
+              <div class="status-icon">❌</div>
+              <div class="status-label" style="color:#e74c3c;">Yo'q, o'tmadim</div>
+              <div class="status-sub">Hali ro'yxat yo'q</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="notRegMsg" style="display:none;background:#fff3f3;border-radius:12px;padding:16px;border:1.5px solid rgba(231,76,60,0.2);text-align:center;font-family:sans-serif;">
+          <div style="font-size:15px;font-weight:600;color:#c0392b;margin-bottom:8px;">⚠️ Avval ro'yxatdan o'ting!</div>
+          <div style="font-size:13px;color:#666;margin-bottom:14px;">
+            Altanal saytida ro'yxatdan o'tib, keyin bu yerga qayting.
+          </div>
+          <a href="https://altanal_reg.eexam.uk/" target="_blank" class="altanal-link">
+            🔗 Altanal Saytiga O'tish
+          </a>
+          <div style="margin-top:16px;">
+            <button onclick="selectStatus('cantRegister')" style="background:none;border:1.5px solid #e74c3c;color:#c0392b;padding:10px 20px;border-radius:10px;font-size:14px;font-family:sans-serif;cursor:pointer;font-weight:600;">
+              😔 O'ta olmadim
+            </button>
+          </div>
+        </div>
+
+        <div id="cantRegMsg" style="display:none;background:#fff8e1;border-radius:12px;padding:18px;border:1.5px solid rgba(255,193,7,0.4);text-align:center;font-family:sans-serif;">
+          <div style="font-size:22px;margin-bottom:8px;">😔</div>
+          <div style="font-size:15px;font-weight:600;color:#856404;margin-bottom:8px;">O'ta olmadim</div>
+          <div style="font-size:13px;color:#856404;line-height:1.6;">
+            Afsuski, Altanal saytida ro'yxatdan o'tmasdan imtihonga kirish mumkin emas.<br>
+            Muammo davom etsa, murabbiyingizga murojaat qiling.
+          </div>
+        </div>
+
+        <div id="msg2" class="msg-box"></div>
+
+        <div id="step2Actions" style="margin-top:16px;">
+          <button class="btn-submit" id="step2NextBtn" onclick="goToStep3()" style="display:none;">
+            Navbat Raqam Olish →
+          </button>
+        </div>
+        <div style="text-align:center;margin-top:14px;">
+          <button onclick="goToStep(1)" style="background:none;border:none;color:var(--text-muted);font-size:13px;font-family:sans-serif;cursor:pointer;">← Orqaga</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: ID & OCHRED -->
+  <div id="step3" style="display:none;">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-icon">🎫</div>
+        <div>
+          <h2>Navbat Raqamingiz</h2>
+          <p>Shaxsiy ID va navbat tartib raqami</p>
+        </div>
+      </div>
+      <div class="card-body">
+
+        <!-- ID CARD -->
+        <div class="id-card" id="resultIdCard">
+          <div class="id-card-top">
+            <div>
+              <div class="id-card-name" id="resultName"></div>
+              <div class="id-card-passport" id="resultPassport"></div>
+            </div>
+            <div class="id-chip">ID CARD</div>
+          </div>
+          <div style="font-size:12px;opacity:0.6;font-family:sans-serif;margin-bottom:6px;">ATTANAL AL-ARABIC IMTIHON TIZIMI</div>
+          <div class="id-numbers">
+            <div class="id-num-box">
+              <div class="id-num-label">Shaxsiy ID</div>
+              <div class="id-num-value" id="resultId"></div>
+            </div>
+            <div class="id-num-box">
+              <div class="id-num-label">Ro'yxat sanasi</div>
+              <div class="id-num-value" id="resultDate" style="font-size:12px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BIG OCHRED NUMBER -->
+        <div class="ochred-big">
+          <div class="ochred-label">🎯 Sizning navbat raqamingiz</div>
+          <div class="ochred-number" id="resultOchred">—</div>
+          <div class="ochred-sub">Bu raqam siz necha-nchi bo'lib kirishingizni bildiradi</div>
+        </div>
+
+        <div class="ochred-divider"></div>
+
+        <div style="background:#e8f5ee;border-radius:12px;padding:16px 18px;font-family:sans-serif;font-size:14px;color:var(--green);line-height:1.7;text-align:center;">
+          🎉 <strong>Tabriklaymiz!</strong> Ro'yxatdan muvaffaqiyatli o'tdingiz.<br>
+          <span style="color:#555;font-size:13px;">Imtihon vaqtida shu raqamni eslang. Bildirishnomalarni kuting.</span>
+        </div>
+
+        <div style="margin-top:16px;text-align:center;font-size:13px;font-family:sans-serif;color:var(--text-muted);">
+          🔔 Admin bildirishnoma yuborsa, bu sahifada ko'rinadi
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER NOTE -->
+  <div class="foot-note">
+    <strong>Attanal Al-Arabic</strong> — Imtihon Ro'yxatga Olish Tizimi<br>
+    Muammolar uchun murabbiyingizga murojaat qiling.<br>
+    <a href="https://azimboyevazimxon-maker.github.io/Attanal-al-arabic/" target="_blank">Asosiy sayt →</a>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ========== DATA STORE (localStorage) ==========
+const STORE_KEY = 'attanal_students';
+const EXAM_KEY = 'attanal_exam';
+const NOTIF_KEY = 'attanal_notifications';
+
+function getStudents() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); } catch(e){ return []; }
+}
+function saveStudents(arr) {
+  localStorage.setItem(STORE_KEY, JSON.stringify(arr));
+}
+function getExam() {
+  try { return JSON.parse(localStorage.getItem(EXAM_KEY) || 'null'); } catch(e){ return null; }
+}
+function saveExam(obj) {
+  localStorage.setItem(EXAM_KEY, JSON.stringify(obj));
+}
+function getNotifs() {
+  try { return JSON.parse(localStorage.getItem(NOTIF_KEY) || '[]'); } catch(e){ return []; }
+}
+function saveNotifs(arr) {
+  localStorage.setItem(NOTIF_KEY, JSON.stringify(arr));
+}
+
+// ========== STATE ==========
+let currentStep = 0;
+let studentData = {};
+let altanalStatus = null;
+
+// ========== INIT ==========
+window.onload = function() {
+  generateQR();
+  updateExamBanner();
+  updateAdminStats();
+  checkNotifications();
+  checkRegistrationOpen();
+};
+
+function generateQR() {
+  const url = window.location.href.split('?')[0];
+  document.getElementById('pageUrl').textContent = url;
+  try {
+    new QRCode(document.getElementById('qrcode'), {
+      text: url,
+      width: 160, height: 160,
+      colorDark: '#1A5C3A',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  } catch(e) {
+    document.getElementById('qrcode').innerHTML = '<div style="width:160px;height:160px;background:#f0f0f0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#999;font-family:sans-serif;">QR yaratilmoqda...</div>';
+  }
+}
+
+function updateExamBanner() {
+  const exam = getExam();
+  const banner = document.getElementById('examBanner');
+  const badge = document.getElementById('examTimeBadge');
+  const waitText = document.getElementById('waitingText');
+  const msgText = document.getElementById('examMsgText');
+  const timeDisp = document.getElementById('examTimeDisplay');
+  
+  if (exam && exam.date) {
+    const d = new Date(exam.date + (exam.time ? 'T'+exam.time : ''));
+    const opts = { year:'numeric', month:'long', day:'numeric', weekday:'long' };
+    const dateStr = d.toLocaleDateString('uz-UZ', opts);
+    timeDisp.textContent = '📅 ' + dateStr;
+    badge.textContent = exam.time ? exam.time + ' da' : 'Bugun';
+    waitText.textContent = 'Ro\'yxatga olish faqat ' + exam.date + ' kuni';
+    msgText.innerHTML = 'Assalomu alaykum! Bugungi imtihon <strong style="color:var(--gold-light)">' + (exam.time||'') + '</strong> da boshlanishi kutilmoqda. Ro\'yxatdan o\'tib, o\'z vaqtingizda keling.<br><span style="font-size:13px;opacity:0.8;">Kutganingiz uchun rahmat!</span>';
+    document.getElementById('currentExamDate').textContent = '✅ Belgilangan: ' + exam.date + ' soat ' + (exam.time||'') + ' da';
+  } else {
+    document.getElementById('currentExamDate').textContent = '⚠️ Hali belgilanmagan';
+  }
+}
+
+function checkRegistrationOpen() {
+  const exam = getExam();
+  const today = new Date().toISOString().split('T')[0];
+  const closedBanner = document.getElementById('closedBanner');
+  
+  if (!exam || !exam.date) {
+    closedBanner.style.display = 'flex';
+    return false;
+  }
+  if (exam.date !== today) {
+    closedBanner.style.display = 'flex';
+    closedBanner.querySelector('.cb-text').innerHTML = 
+      '<strong>Ro\'yxatga olish ' + exam.date + ' kuni ochiladi.</strong><br>' +
+      'Imtihon faqat belgilangan kuni ro\'yxatdan o\'tish mumkin.';
+    return false;
+  }
+  closedBanner.style.display = 'none';
+  return true;
+}
+
+function checkNotifications() {
+  const notifs = getNotifs();
+  if (notifs.length === 0) return;
+  const last = notifs[notifs.length - 1];
+  const banner = document.getElementById('notifBanner');
+  document.getElementById('notifBannerText').textContent = last.msg;
+  banner.style.display = 'block';
+}
+
+// ========== NAVIGATION ==========
+function goToStep(n) {
+  for (let i = 0; i <= 3; i++) {
+    const el = document.getElementById('step'+i);
+    if (el) el.style.display = (i === n) ? 'block' : 'none';
+    const dot = document.getElementById('dot'+i);
+    if (dot) {
+      dot.className = 'p-step';
+      if (i < n) dot.classList.add('done');
+      if (i === n) dot.classList.add('active');
+    }
+  }
+  currentStep = n;
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function goToStep2() {
+  const surname = document.getElementById('surname').value.trim();
+  const firstname = document.getElementById('firstname').value.trim();
+  const passport = document.getElementById('passport').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const msg = document.getElementById('msg1');
+
+  if (!surname || !firstname) {
+    showMsg(msg, 'error', '⚠️ Ism va familiyani kiriting!');
+    return;
+  }
+  if (!passport || !/^[A-Z]{2}\d{7}$/.test(passport)) {
+    showMsg(msg, 'error', '⚠️ Pasport seriyasi noto\'g\'ri! Misol: AB1234567');
+    return;
+  }
+  if (!phone || phone.length < 9) {
+    showMsg(msg, 'error', '⚠️ Telefon raqamini to\'g\'ri kiriting!');
+    return;
+  }
+
+  // Check if exam date is today
+  if (!checkRegistrationOpen()) {
+    showMsg(msg, 'error', '🔒 Ro\'yxatga olish bugun mavjud emas. Faqat imtihon kuni ro\'yxatdan o\'tish mumkin.');
+    return;
+  }
+
+  // Check duplicate (name + passport)
+  const students = getStudents();
+  const fullName = surname.toUpperCase() + ' ' + firstname.toUpperCase();
+  const dup = students.find(s => s.passport === passport);
+  if (dup) {
+    showMsg(msg, 'error', '⚠️ Bu pasport raqami bilan allaqachon ro\'yxatdan o\'tilgan! (Navbat: №' + dup.ochred + ')');
+    return;
+  }
+  const dupName = students.find(s => s.surname.toUpperCase() === surname.toUpperCase() && s.firstname.toUpperCase() === firstname.toUpperCase());
+  if (dupName) {
+    showMsg(msg, 'error', '⚠️ Bu ism-familiya bilan allaqachon ro\'yxatdan o\'tilgan! Har bir talaba faqat bir marta ro\'yxatdan o\'tishi mumkin.');
+    return;
+  }
+
+  studentData = { surname, firstname, patronymic: document.getElementById('patronymic').value.trim(), passport, phone };
+  msg.className = 'msg-box';
+  goToStep(2);
+}
+
+function goToStep3() {
+  if (altanalStatus !== 'yes') {
+    showMsg(document.getElementById('msg2'), 'error', '⚠️ Altanal saytida ro\'yxatdan o\'tganligingizni tasdiqlashingiz kerak!');
+    return;
+  }
+
+  const students = getStudents();
+  const id = 'ATL-' + Date.now().toString(36).toUpperCase().slice(-6);
+  const ochred = students.length + 1;
+  const today = new Date();
+  
+  const newStudent = {
+    ...studentData,
+    id, ochred,
+    altanal: 'yes',
+    date: today.toLocaleDateString('uz-UZ'),
+    time: today.toLocaleTimeString('uz-UZ', {hour:'2-digit', minute:'2-digit'})
+  };
+  students.push(newStudent);
+  saveStudents(students);
+
+  // Show results
+  document.getElementById('resultName').textContent = newStudent.surname + ' ' + newStudent.firstname + (newStudent.patronymic ? ' ' + newStudent.patronymic : '');
+  document.getElementById('resultPassport').textContent = 'Pasport: ' + newStudent.passport + ' • Tel: ' + newStudent.phone;
+  document.getElementById('resultId').textContent = id;
+  document.getElementById('resultDate').textContent = newStudent.date + ' ' + newStudent.time;
+  document.getElementById('resultOchred').textContent = ochred;
+
+  goToStep(3);
+  updateAdminStats();
+  showToast('🎉 Muvaffaqiyatli ro\'yxatdan o\'tdingiz!');
+}
+
+// ========== STATUS SELECT ==========
+function selectStatus(status) {
+  altanalStatus = status;
+  document.getElementById('btnYes').className = 'status-btn';
+  document.getElementById('btnNo').className = 'status-btn';
+  document.getElementById('notRegMsg').style.display = 'none';
+  document.getElementById('cantRegMsg').style.display = 'none';
+  document.getElementById('step2NextBtn').style.display = 'none';
+  document.getElementById('msg2').className = 'msg-box';
+
+  if (status === 'yes') {
+    document.getElementById('btnYes').className = 'status-btn selected-yes';
+    document.getElementById('step2NextBtn').style.display = 'block';
+  } else if (status === 'no') {
+    document.getElementById('btnNo').className = 'status-btn selected-no';
+    document.getElementById('notRegMsg').style.display = 'block';
+  } else if (status === 'cantRegister') {
+    document.getElementById('cantRegMsg').style.display = 'block';
+    altanalStatus = null;
+  }
+}
+
+// ========== ADMIN PANEL ==========
+function openPanel() {
+  document.getElementById('sidePanel').classList.add('open');
+  document.getElementById('panelOverlay').classList.add('open');
+  updateAdminStats();
+  loadNotifHistory();
+}
+function closePanel() {
+  document.getElementById('sidePanel').classList.remove('open');
+  document.getElementById('panelOverlay').classList.remove('open');
+}
+
+function updateAdminStats() {
+  const students = getStudents();
+  const today = new Date().toLocaleDateString('uz-UZ');
+  const todayCount = students.filter(s => s.date === today).length;
+  
+  document.getElementById('statTotal').textContent = students.length;
+  document.getElementById('statToday').textContent = todayCount;
+
+  const tbody = document.getElementById('adminTableBody');
+  if (students.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#999;padding:16px;font-family:sans-serif;">Hali hech kim yo\'q</td></tr>';
+    return;
+  }
+  const last10 = students.slice(-10).reverse();
+  tbody.innerHTML = last10.map(s => `
+    <tr>
+      <td style="font-weight:bold;color:var(--green);">${s.ochred}</td>
+      <td>${s.surname} ${s.firstname}</td>
+      <td style="font-family:monospace;font-size:11px;">${s.id}</td>
+      <td style="font-size:11px;">${s.date}</td>
+    </tr>
+  `).join('');
+}
+
+function setExamDate() {
+  const date = document.getElementById('examDateInput').value;
+  const time = document.getElementById('examTimeInput').value;
+  if (!date) { showToast('⚠️ Sanani tanlang!'); return; }
+  saveExam({ date, time });
+  updateExamBanner();
+  checkRegistrationOpen();
+  showToast('✅ Imtihon kuni belgilandi: ' + date + ' soat ' + time);
+}
+
+// ========== NOTIFICATIONS ==========
+function sendNotification() {
+  const msg = document.getElementById('notifyMsg').value.trim();
+  if (!msg) { showToast('⚠️ Xabar yozing!'); return; }
+  
+  const notifs = getNotifs();
+  notifs.push({
+    msg,
+    time: new Date().toLocaleString('uz-UZ')
+  });
+  saveNotifs(notifs);
+  document.getElementById('notifyMsg').value = '';
+  loadNotifHistory();
+  checkNotifications();
+  showToast('📤 Xabar yuborildi!');
+}
+
+function loadNotifHistory() {
+  const notifs = getNotifs();
+  const el = document.getElementById('notifHistory');
+  if (notifs.length === 0) {
+    el.innerHTML = '<div style="font-size:13px;color:#999;font-family:sans-serif;">Hali xabar yuborilmagan</div>';
+    return;
+  }
+  el.innerHTML = notifs.slice(-3).reverse().map(n => `
+    <div class="notif-item">
+      ${n.msg}
+      <div class="notif-time">⏰ ${n.time}</div>
+    </div>
+  `).join('');
+}
+
+// ========== HELPERS ==========
+function copyLink() {
+  const url = document.getElementById('pageUrl').textContent;
+  navigator.clipboard.writeText(url).then(() => showToast('✅ Havola nusxalandi!')).catch(() => showToast('Nusxalab oling: ' + url));
+}
+
+function showMsg(el, type, text) {
+  el.className = 'msg-box ' + type + ' show';
+  el.textContent = text;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
