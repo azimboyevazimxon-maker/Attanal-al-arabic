@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attanal Al-Arabic — Imtihon Ro'yxati</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --g:#1A5C3A;--gl:#2D8B5E;--gd:#0f3622;
+  --gold:#C9A84C;--bg:#0d1117;--card:#161b22;
+  --border:#30363d;--text:#e6edf3;--muted:#8b949e;
+  --red:#ef4444;--green:#22c55e;
+}
+body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,var(--gd),var(--g));padding:14px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(201,168,76,.2)}
+.hdr-logo{width:44px;height:44px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#fff;flex-shrink:0}
+.hdr-title{font-size:16px;font-weight:700;color:#fff}
+.hdr-sub{font-size:11px;color:rgba(255,255,255,.65);margin-top:2px}
+.hdr-menu{margin-left:auto;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;width:38px;height:38px;border-radius:9px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex-shrink:0}
+.hdr-menu span{display:block;width:18px;height:2px;background:#fff;border-radius:2px}
+
+/* SIDE PANEL (help only) */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200}
+.overlay.on{display:block}
+.panel{position:fixed;top:0;right:-340px;width:320px;height:100vh;background:#161b22;border-left:1px solid var(--border);z-index:201;transition:right .3s ease;overflow-y:auto}
+.panel.on{right:0}
+.panel-hdr{background:linear-gradient(135deg,var(--gd),var(--g));padding:18px 16px;display:flex;align-items:center;justify-content:space-between}
+.panel-hdr h2{color:#fff;font-size:15px}
+.panel-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:700}
+.help-step{display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border)}
+.help-num{width:26px;height:26px;border-radius:50%;background:var(--gold);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.help-txt{font-size:13px;color:#ccc;line-height:1.6}
+.help-txt strong{color:var(--green)}
+
+/* WRAP */
+.wrap{max-width:580px;margin:0 auto;padding:24px 16px 60px}
+
+/* WELCOME / QR PAGE */
+.welcome-card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:20px}
+.welcome-top{background:linear-gradient(135deg,var(--gd) 0%,var(--g) 100%);padding:28px 24px;text-align:center;position:relative;overflow:hidden}
+.welcome-top::before{content:'✦';position:absolute;right:20px;top:12px;font-size:60px;opacity:.07}
+.welcome-top h1{color:#fff;font-size:20px;margin-bottom:6px}
+.welcome-top p{color:rgba(255,255,255,.7);font-size:13px;line-height:1.6}
+.exam-time-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:6px 14px;margin-top:12px;font-size:13px;color:#fff}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--gold);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+
+.welcome-body{padding:24px}
+.qr-row{display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:20px}
+.qr-box{background:#fff;border:2px solid var(--gold);border-radius:14px;padding:12px;flex-shrink:0}
+.qr-info{flex:1;min-width:180px}
+.qr-info h3{font-size:14px;color:var(--gold);margin-bottom:8px}
+.qr-info p{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px}
+.link-row{display:flex;gap:6px;align-items:center;background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:8px 10px}
+.link-row span{font-size:11px;color:#38bdf8;font-family:monospace;flex:1;word-break:break-all}
+.copy-btn{background:var(--g);color:#fff;border:none;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:700;white-space:nowrap}
+
+/* CLOSED BANNER */
+.closed{background:#1a0f0f;border:1px solid #ef444444;border-radius:12px;padding:16px 18px;text-align:center;margin-bottom:20px;display:none}
+.closed h3{color:var(--red);font-size:15px;margin-bottom:6px}
+.closed p{font-size:13px;color:#ccc}
+
+/* BUTTONS */
+.btn{width:100%;padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:700;cursor:pointer;transition:.15s}
+.btn-green{background:linear-gradient(135deg,var(--g),var(--gl));color:#fff}
+.btn-green:hover{opacity:.9}
+.btn-green:disabled{opacity:.4;cursor:not-allowed}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted);font-size:13px;padding:10px;margin-top:10px}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#a07820);color:#fff}
+.btn-ask{background:#1e2a3a;border:1px solid #38bdf844;color:#38bdf8;font-size:13px;padding:11px;border-radius:10px;width:100%;cursor:pointer;font-weight:600;margin-top:10px}
+
+/* STEPS DOTS */
+.dots{display:flex;justify-content:center;gap:8px;margin-bottom:22px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--border)}
+.dot.done{background:var(--gold)}
+.dot.active{background:var(--green);width:24px;border-radius:4px}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:20px}
+.card-head{background:linear-gradient(90deg,var(--gd),var(--g));padding:14px 20px;display:flex;align-items:center;gap:10px}
+.card-icon{width:32px;height:32px;background:rgba(255,255,255,.12);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.card-head h2{color:#fff;font-size:15px;font-weight:600}
+.card-head p{color:rgba(255,255,255,.6);font-size:11px}
+.card-body{padding:20px}
+
+/* FORM */
+.fg{margin-bottom:14px}
+.fl{font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600;letter-spacing:.3px}
+.req{color:var(--red)}
+input,textarea{width:100%;padding:11px 13px;background:#0d1117;border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:15px;outline:none;font-family:inherit;transition:border .2s}
+input:focus,textarea:focus{border-color:var(--gold)}
+input.err{border-color:var(--red)}
+.fhint{font-size:11px;color:var(--muted);margin-top:4px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:460px){.frow{grid-template-columns:1fr}}
+.phone-wrap{position:relative}
+.phone-prefix{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px;pointer-events:none;font-family:monospace}
+.phone-input{padding-left:52px!important}
+
+/* STATUS */
+.status-row{display:flex;gap:10px}
+.status-opt{flex:1;background:#0d1117;border:2px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:.2s}
+.status-opt:hover{border-color:var(--gold)}
+.status-opt.yes{border-color:var(--green);background:#0d1f14}
+.status-opt.no{border-color:var(--red);background:#1a0f0f}
+.status-opt .ico{font-size:26px;margin-bottom:5px}
+.status-opt .lbl{font-size:13px;font-weight:700}
+.altanal-link{display:inline-flex;align-items:center;gap:6px;background:var(--gold);color:#fff;text-decoration:none;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:700;margin-top:12px}
+.cant-box{background:#1a1000;border:1px solid rgba(255,193,7,.25);border-radius:12px;padding:16px;text-align:center;margin-top:12px}
+
+/* RESULT */
+.id-card{background:linear-gradient(135deg,var(--gd) 0%,var(--g) 60%,#1d6640 100%);border:2px solid var(--gold);border-radius:18px;padding:24px 22px 20px;position:relative;overflow:hidden;margin-bottom:16px}
+.id-card::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.04)}
+.id-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.id-name{font-size:18px;font-weight:800;color:#fff;margin-bottom:3px}
+.id-pass{font-size:12px;color:rgba(255,255,255,.6)}
+.id-chip{background:var(--gold);border-radius:7px;padding:5px 11px;font-size:10px;font-weight:800;letter-spacing:1px;color:#fff}
+.id-nums{display:flex;gap:10px}
+.id-num{background:rgba(255,255,255,.08);border-radius:10px;padding:12px 14px;flex:1;text-align:center}
+.id-num-lbl{font-size:10px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.id-num-val{font-size:14px;font-weight:800;color:#fff}
+
+.ochred-big{text-align:center;padding:20px 0 8px}
+.ochred-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.ochred-num{font-size:80px;font-weight:900;color:var(--green);line-height:1}
+.ochred-sub{font-size:12px;color:var(--muted);margin-top:5px}
+
+/* MSG */
+.msg{padding:12px 14px;border-radius:10px;font-size:13px;margin-top:12px;display:none}
+.msg.ok{background:#0d1f14;border:1px solid #22c55e44;color:var(--green);display:block}
+.msg.er{background:#1a0f0f;border:1px solid #ef444444;color:var(--red);display:block}
+
+/* MODAL (ask question) */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;align-items:center;justify-content:center;padding:20px}
+.modal-bg.on{display:flex}
+.modal-box{background:#161b22;border:1px solid var(--border);border-radius:16px;padding:24px;width:100%;max-width:420px}
+.modal-box h3{font-size:16px;color:#fff;margin-bottom:14px}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--g);color:#fff;padding:11px 22px;border-radius:30px;font-size:13px;font-weight:700;z-index:9999;transition:transform .3s;white-space:nowrap;box-shadow:0 6px 24px rgba(0,0,0,.3)}
+.toast.on{transform:translateX(-50%) translateY(0)}
+
+/* RECOVER */
+.recover-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:20px;display:none}
+.recover-box h3{font-size:15px;color:#fff;margin-bottom:6px}
+.recover-box p{font-size:13px;color:var(--muted);margin-bottom:14px}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-logo">ع</div>
+  <div>
+    <div class="hdr-title">Attanal Al-Arabic</div>
+    <div class="hdr-sub">Imtihon Ro'yxatga Olish</div>
+  </div>
+  <button class="hdr-menu" onclick="openHelp()"><span></span><span></span><span></span></button>
+</header>
+
+<!-- HELP PANEL -->
+<div class="overlay" id="overlay" onclick="closeHelp()"></div>
+<div class="panel" id="panel">
+  <div class="panel-hdr">
+    <h2>📖 Qo'llanma</h2>
+    <button class="panel-close" onclick="closeHelp()">✕</button>
+  </div>
+  <div class="help-step">
+    <div class="help-num">1</div>
+    <div class="help-txt"><strong>Ro'yxatni boshlang</strong> — "Ro'yxatdan O'tish" tugmasini bosing</div>
+  </div>
+  <div class="help-step">
+    <div class="help-num">2</div>
+    <div class="help-txt"><strong>Ma'lumotlaringizni kiriting</strong> — familiya, ism, pasport seriyasi va telefon</div>
+  </div>
+  <div class="help-step">
+    <div class="help-num">3</div>
+    <div class="help-txt"><strong>Altanal saytida</strong> ro'yxatdan o'tganligingizni tasdiqlang. O'ta olmagan bo'lsangiz ham davom etishingiz mumkin</div>
+  </div>
+  <div class="help-step">
+    <div class="help-num">4</div>
+    <div class="help-txt"><strong>Navbat raqamingizni</strong> oling — bu raqam siz necha-nchi bo'lib kirishingizni bildiradi</div>
+  </div>
+  <div class="help-step">
+    <div class="help-num">5</div>
+    <div class="help-txt"><strong>Agar savoliz bo'lsa</strong> — "Imtihon qachon boshlanadi?" tugmasi orqali adminga so'rang</div>
+  </div>
+  <div style="padding:16px;background:#0d1117;margin:12px 16px;border-radius:10px;font-size:12px;color:var(--muted);line-height:1.7">
+    ⚠️ <strong style="color:#fff">Muhim:</strong> Pasportdagi ism-familiyani to'liq va aniq yozing. Faqat imtihon kuni ro'yxatdan o'tish mumkin.
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="wrap" id="mainWrap">
+
+  <!-- RECOVER BOX -->
+  <div class="recover-box" id="recoverBox">
+    <h3>🔍 Avval ro'yxatdan o'tganmisiz?</h3>
+    <p>Agar bugun allaqachon ro'yxatdan o'tgan bo'lsangiz, pasport seriyangizni kiriting:</p>
+    <div class="fg">
+      <input type="text" id="recoverPass" placeholder="AB1234567" maxlength="9" oninput="this.value=this.value.toUpperCase()">
+    </div>
+    <button class="btn btn-gold" onclick="recoverOchred()">🔍 Navbatimni Ko'rish</button>
+    <button class="btn btn-outline" onclick="hideRecover()">Yo'q, yangi ro'yxat</button>
+    <div id="recoverMsg" class="msg"></div>
+  </div>
+
+  <!-- DOTS -->
+  <div class="dots" id="dots">
+    <div class="dot active" id="d0"></div>
+    <div class="dot" id="d1"></div>
+    <div class="dot" id="d2"></div>
+    <div class="dot" id="d3"></div>
+  </div>
+
+  <!-- STEP 0: WELCOME + QR -->
+  <div id="s0">
+    <div class="welcome-card">
+      <div class="welcome-top">
+        <h1>Imtihon Ro'yxatga Olish</h1>
+        <p id="welcomeMsg">Ro'yxatdan o'tib, navbat raqamingizni oling.<br>Kutganingiz uchun rahmat!</p>
+        <div class="exam-time-badge">
+          <div class="pulse"></div>
+          <span id="examBadge">Imtihon vaqti aniqlanmoqda...</span>
+        </div>
+      </div>
+      <div class="welcome-body">
+        <div class="qr-row">
+          <div class="qr-box">
+            <div id="qrcode"></div>
+          </div>
+          <div class="qr-info">
+            <h3>📱 QR Kod</h3>
+            <p>Do'stlaringizga ulashish uchun QR kodni skanerlang yoki havolani nusxalang</p>
+            <div class="link-row">
+              <span id="pageUrl">...</span>
+              <button class="copy-btn" onclick="copyLink()">Nusxa</button>
+            </div>
+          </div>
+        </div>
+        <div class="closed" id="closedBanner">
+          <h3>🔒 Ro'yxatga olish yopiq</h3>
+          <p>Imtihon kuni admin tomonidan ro'yxat ochiladi. Iltimos kuting.</p>
+        </div>
+        <button class="btn btn-green" id="startBtn" onclick="startReg()">📋 Ro'yxatdan O'tish →</button>
+        <button class="btn btn-outline" onclick="showRecover()">🔍 Allaqachon ro'yxatdan o'tganman</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 1: INFO -->
+  <div id="s1" style="display:none">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-icon">👤</div>
+        <div><h2>Ma'lumotlaringiz</h2><p>Pasportdagi kabi to'liq yozing</p></div>
+      </div>
+      <div class="card-body">
+        <div class="frow">
+          <div class="fg">
+            <div class="fl">Familiya <span class="req">*</span></div>
+            <input id="f_sur" type="text" placeholder="YUSUPOV" autocomplete="off">
+            <div class="fhint">Pasportdagi kabi KATTA harfda</div>
+          </div>
+          <div class="fg">
+            <div class="fl">Ism <span class="req">*</span></div>
+            <input id="f_name" type="text" placeholder="JASUR" autocomplete="off">
+          </div>
+        </div>
+        <div class="frow">
+          <div class="fg">
+            <div class="fl">Otasining ismi</div>
+            <input id="f_mid" type="text" placeholder="BAXTIYOROVICH" autocomplete="off">
+          </div>
+          <div class="fg">
+            <div class="fl">Pasport seriya <span class="req">*</span></div>
+            <input id="f_pass" type="text" placeholder="AB1234567" maxlength="9" oninput="this.value=this.value.toUpperCase()" autocomplete="off">
+            <div class="fhint">Misol: AB1234567</div>
+          </div>
+        </div>
+        <div class="fg">
+          <div class="fl">Telefon <span class="req">*</span></div>
+          <div class="phone-wrap">
+            <span class="phone-prefix">+998</span>
+            <input id="f_tel" type="tel" class="phone-input" placeholder="90 123 45 67" maxlength="12" oninput="fmtPhone(this)">
+          </div>
+          <div class="fhint">Misol: +998 90 123 45 67</div>
+        </div>
+        <div id="msg1" class="msg"></div>
+        <button class="btn btn-green" onclick="step1Next()">Keyingi →</button>
+        <button class="btn btn-outline" onclick="goStep(0)">← Orqaga</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: ALTANAL -->
+  <div id="s2" style="display:none">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-icon">✅</div>
+        <div><h2>Altanal Sayt Tasdiqlash</h2><p>altanal_reg.eexam.uk tekshiriladi</p></div>
+      </div>
+      <div class="card-body">
+        <div style="background:#0d1117;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:18px;font-size:13px;color:#ccc;line-height:1.7;border-left:3px solid var(--gold)">
+          ⚠️ Imtihonga kirish uchun <strong style="color:#fff">altanal_reg.eexam.uk</strong> saytida ro'yxatdan o'tgan bo'lish tavsiya etiladi.
+        </div>
+        <div class="fl" style="margin-bottom:10px">Siz shu saytda ro'yxatdan o'tganmisiz?</div>
+        <div class="status-row">
+          <div class="status-opt" id="opt_yes" onclick="setAlt('yes')">
+            <div class="ico">✅</div>
+            <div class="lbl" style="color:var(--green)">Ha, o'tdim</div>
+          </div>
+          <div class="status-opt" id="opt_no" onclick="setAlt('no')">
+            <div class="ico">❌</div>
+            <div class="lbl" style="color:var(--red)">Yo'q</div>
+          </div>
+        </div>
+
+        <!-- NOT REG -->
+        <div id="notRegDiv" style="display:none;margin-top:14px;text-align:center">
+          <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Avval ro'yxatdan o'tib qaytib keling:</p>
+          <a href="https://altanal_reg.eexam.uk/" target="_blank" class="altanal-link">🔗 Altanal Saytiga O'tish</a>
+          <div style="margin-top:14px">
+            <button onclick="setAlt('cant')" style="background:none;border:1px solid var(--red);color:var(--red);padding:9px 18px;border-radius:9px;font-size:13px;cursor:pointer;font-weight:700">😔 O'ta olmadim</button>
+          </div>
+        </div>
+
+        <!-- CANT -->
+        <div class="cant-box" id="cantDiv" style="display:none">
+          <div style="font-size:22px;margin-bottom:8px">😔</div>
+          <div style="font-size:14px;font-weight:700;color:#fbbf24;margin-bottom:6px">O'ta olmadim</div>
+          <div style="font-size:13px;color:#ccc;line-height:1.6">Xavotir olmang! Sizni imtihonga o'tkazib berishga harakat qilamiz. Navbat raqam olishda davom eting.</div>
+        </div>
+
+        <div id="msg2" class="msg"></div>
+        <button class="btn btn-green" id="step2Btn" onclick="step2Next()" style="display:none;margin-top:14px">Navbat Raqam Olish →</button>
+        <button class="btn btn-outline" onclick="goStep(1)">← Orqaga</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: RESULT -->
+  <div id="s3" style="display:none">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-icon">🎫</div>
+        <div><h2>Navbat Raqamingiz</h2><p>Shaxsiy ID va navbat tartib raqami</p></div>
+      </div>
+      <div class="card-body">
+        <div class="id-card">
+          <div class="id-top">
+            <div>
+              <div class="id-name" id="r_name"></div>
+              <div class="id-pass" id="r_pass"></div>
+            </div>
+            <div class="id-chip">ID CARD</div>
+          </div>
+          <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:8px;font-family:monospace">ATTANAL AL-ARABIC</div>
+          <div class="id-nums">
+            <div class="id-num">
+              <div class="id-num-lbl">Shaxsiy ID</div>
+              <div class="id-num-val" id="r_id" style="font-size:22px;letter-spacing:2px"></div>
+            </div>
+            <div class="id-num">
+              <div class="id-num-lbl">Sana</div>
+              <div class="id-num-val" id="r_date" style="font-size:12px"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ochred-big">
+          <div class="ochred-lbl">🎯 Sizning navbat raqamingiz</div>
+          <div class="ochred-num" id="r_ochred">—</div>
+          <div class="ochred-sub">Siz necha-nchi bo'lib kirishingiz</div>
+        </div>
+
+        <div style="background:#0d1f14;border:1px solid #22c55e33;border-radius:12px;padding:14px;text-align:center;font-size:14px;color:var(--green);margin:14px 0">
+          🎉 <strong>Tabriklaymiz!</strong> Muvaffaqiyatli ro'yxatdan o'tdingiz.
+        </div>
+
+        <!-- ASK ADMIN -->
+        <button class="btn-ask" onclick="openAsk()">
+          💬 Imtihon qachon boshlanadi? — Adminga so'rash
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<!-- ASK MODAL -->
+<div class="modal-bg" id="askModal">
+  <div class="modal-box">
+    <h3>💬 Adminga Savol Yuborish</h3>
+    <div class="fg">
+      <div class="fl">Savolingiz:</div>
+      <textarea id="askMsg" rows="3" placeholder="Misol: Imtihon qachon boshlanadi? Necha daqiqa oldin kelish kerak?"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-green" onclick="sendAsk()" style="flex:1">📤 Yuborish</button>
+      <button class="btn btn-outline" onclick="closeAsk()" style="width:100px;margin-top:0">Bekor</button>
+    </div>
+    <div id="askMsg2" class="msg"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── FIREBASE ───────────────────────────────────────
+firebase.initializeApp({
+  apiKey:"AIzaSyDjTk7bIALu_YHT49yOV4u9YvNGTD4mOsY",
+  authDomain:"attanal-al-arabic.firebaseapp.com",
+  projectId:"attanal-al-arabic",
+  storageBucket:"attanal-al-arabic.firebasestorage.app",
+  messagingSenderId:"46853290812",
+  appId:"1:46853290812:web:9f91c344c9765b37487c39"
+});
+const db = firebase.firestore();
+
+// ── STATE ──────────────────────────────────────────
+let step = 0, formData = {}, altStatus = null, myReg = null, regCfg = null;
+const TODAY = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+// ── INIT ───────────────────────────────────────────
+window.onload = async () => {
+  initQR();
+  await loadConfig();
+  checkNotif();
+};
+
+async function loadConfig(){
+  try{
+    const d = await db.collection('config').doc('registration').get();
+    regCfg = d.exists ? d.data() : {};
+  }catch(e){ regCfg = {}; }
+  updateBanner();
+  checkOpen();
+}
+
+function updateBanner(){
+  const badge = document.getElementById('examBadge');
+  const msg = document.getElementById('welcomeMsg');
+  if(regCfg && regCfg.date && regCfg.time){
+    badge.textContent = '📅 '+formatDate(regCfg.date)+' — soat '+regCfg.time+' da';
+    msg.innerHTML = 'Bugungi imtihon <strong style="color:#fbbf24">'+regCfg.time+'</strong> da boshlanishi kutilmoqda.<br>Ro\'yxatdan o\'tib, navbat raqamingizni oling. Kutganingiz uchun rahmat!';
+  } else {
+    badge.textContent = 'Imtihon vaqti aniqlanmoqda...';
+  }
+}
+
+function formatDate(d){
+  if(!d) return '';
+  const months = ['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentabr','Oktabr','Noyabr','Dekabr'];
+  const p = d.split('-');
+  return p[2]+' '+months[parseInt(p[1])-1]+' '+p[0];
+}
+
+function checkOpen(){
+  const isOpen = regCfg && regCfg.open && regCfg.date === TODAY;
+  document.getElementById('closedBanner').style.display = isOpen ? 'none' : 'block';
+  document.getElementById('startBtn').disabled = !isOpen;
+  if(!isOpen){
+    document.getElementById('closedBanner').querySelector('p').textContent =
+      regCfg && regCfg.date && regCfg.date !== TODAY
+        ? 'Ro\'yxatga olish '+formatDate(regCfg.date)+' kuni ochiladi.'
+        : 'Imtihon kuni admin tomonidan ro\'yxat ochiladi. Iltimos kuting.';
+  }
+}
+
+async function checkNotif(){
+  try{
+    const d = await db.collection('config').doc('regNotification').get();
+    if(d.exists && d.data().msg){
+      showToast('📢 '+d.data().msg, 5000);
+    }
+  }catch(e){}
+}
+
+// ── QR ─────────────────────────────────────────────
+function initQR(){
+  const url = location.href.split('?')[0];
+  document.getElementById('pageUrl').textContent = url;
+  try{
+    new QRCode(document.getElementById('qrcode'),{
+      text:url, width:140, height:140,
+      colorDark:'#1A5C3A', colorLight:'#ffffff',
+      correctLevel:QRCode.CorrectLevel.H
+    });
+  }catch(e){}
+}
+
+function copyLink(){
+  const u = document.getElementById('pageUrl').textContent;
+  navigator.clipboard.writeText(u).then(()=>showToast('✅ Nusxalandi!')).catch(()=>{});
+}
+
+// ── STEPS ──────────────────────────────────────────
+function goStep(n){
+  for(let i=0;i<=3;i++){
+    document.getElementById('s'+i).style.display = i===n?'block':'none';
+    const d = document.getElementById('d'+i);
+    d.className = 'dot'+(i<n?' done':i===n?' active':'');
+  }
+  step = n;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function startReg(){
+  if(document.getElementById('startBtn').disabled){ showToast('⚠️ Ro\'yxat hali ochilmagan'); return; }
+  goStep(1);
+}
+
+// ── STEP 1 ─────────────────────────────────────────
+function fmtPhone(el){
+  let v = el.value.replace(/\D/g,'');
+  if(v.length > 9) v = v.slice(0,9);
+  let out = '';
+  if(v.length > 0) out = v.slice(0,2);
+  if(v.length > 2) out += ' '+v.slice(2,5);
+  if(v.length > 5) out += ' '+v.slice(5,7);
+  if(v.length > 7) out += ' '+v.slice(7,9);
+  el.value = out;
+}
+
+async function step1Next(){
+  const sur = document.getElementById('f_sur').value.trim().toUpperCase();
+  const nm = document.getElementById('f_name').value.trim().toUpperCase();
+  const mid = document.getElementById('f_mid').value.trim();
+  const pass = document.getElementById('f_pass').value.trim().toUpperCase();
+  const tel = document.getElementById('f_tel').value.replace(/\s/g,'');
+  const msg = document.getElementById('msg1');
+
+  if(!sur||!nm){ showM(msg,'er','⚠️ Familiya va ismni kiriting!'); return; }
+  if(!/^[A-Z]{2}\d{7}$/.test(pass)){ showM(msg,'er','⚠️ Pasport seriyasi noto\'g\'ri! Misol: AB1234567'); return; }
+  if(tel.length < 9){ showM(msg,'er','⚠️ Telefon raqamini to\'g\'ri kiriting!'); return; }
+
+  msg.className='msg';
+  const btn = document.querySelector('#s1 .btn-green');
+  btn.disabled=true; btn.textContent='Tekshirilmoqda...';
+
+  try{
+    // Check duplicate passport for TODAY
+    const snap = await db.collection('registrations')
+      .where('passport','==',pass)
+      .where('examDate','==',TODAY)
+      .get();
+    if(!snap.empty){
+      const d = snap.docs[0].data();
+      showM(msg,'er','⚠️ Bu pasport bilan bugun allaqachon ro\'yxatdan o\'tilgan! Navbat raqami: №'+d.ochred);
+      btn.disabled=false; btn.textContent='Keyingi →';
+      return;
+    }
+    // Check duplicate name for TODAY
+    const snap2 = await db.collection('registrations')
+      .where('surname','==',sur)
+      .where('firstname','==',nm)
+      .where('examDate','==',TODAY)
+      .get();
+    if(!snap2.empty){
+      const d = snap2.docs[0].data();
+      showM(msg,'er','⚠️ Bu ism-familiya bilan bugun allaqachon ro\'yxatdan o\'tilgan! Navbat: №'+d.ochred);
+      btn.disabled=false; btn.textContent='Keyingi →';
+      return;
+    }
+  }catch(e){ showM(msg,'er','Xato: '+e.message); btn.disabled=false; btn.textContent='Keyingi →'; return; }
+
+  formData = { surname:sur, firstname:nm, patronymic:mid, passport:pass, phone:'+998'+tel };
+  btn.disabled=false; btn.textContent='Keyingi →';
+  msg.className='msg';
+  goStep(2);
+}
+
+// ── STEP 2 ─────────────────────────────────────────
+function setAlt(v){
+  altStatus = v;
+  document.getElementById('opt_yes').className='status-opt'+(v==='yes'?' yes':'');
+  document.getElementById('opt_no').className='status-opt'+(v==='no'||v==='cant'?' no':'');
+  document.getElementById('notRegDiv').style.display = v==='no'?'block':'none';
+  document.getElementById('cantDiv').style.display = v==='cant'?'block':'none';
+  document.getElementById('step2Btn').style.display = (v==='yes'||v==='cant')?'block':'none';
+  document.getElementById('msg2').className='msg';
+}
+
+async function step2Next(){
+  if(!altStatus||altStatus==='no'){ showM(document.getElementById('msg2'),'er','⚠️ Tanlov qiling'); return; }
+  const btn = document.getElementById('step2Btn');
+  btn.disabled=true; btn.textContent='Saqlanmoqda...';
+  try{
+    // Generate unique 4-digit ID
+    const id = await genId();
+    // Get ochred number for today
+    const snap = await db.collection('registrations').where('examDate','==',TODAY).get();
+    const ochred = snap.size + 1;
+    const now = new Date();
+    const reg = {
+      ...formData,
+      id, ochred,
+      altanal: altStatus,
+      examDate: TODAY,
+      date: now.toLocaleDateString('uz-UZ'),
+      time: now.toLocaleTimeString('uz-UZ',{hour:'2-digit',minute:'2-digit'}),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    await db.collection('registrations').doc(id).set(reg);
+    myReg = reg;
+    showResult(reg);
+    goStep(3);
+  }catch(e){
+    showM(document.getElementById('msg2'),'er','Xato: '+e.message);
+  }
+  btn.disabled=false; btn.textContent='Navbat Raqam Olish →';
+}
+
+async function genId(){
+  let id, tries=0;
+  while(true){
+    tries++;
+    const digits = tries < 50 ? 4 : 5;
+    const max = Math.pow(10,digits);
+    const min = Math.pow(10,digits-1);
+    const num = String(Math.floor(Math.random()*(max-min))+min);
+    const ex = await db.collection('registrations').doc(num).get();
+    if(!ex.exists){ id=num; break; }
+  }
+  return id;
+}
+
+function showResult(reg){
+  document.getElementById('r_name').textContent = reg.surname+' '+reg.firstname+(reg.patronymic?' '+reg.patronymic:'');
+  document.getElementById('r_pass').textContent = 'Pasport: '+reg.passport+' • Tel: '+reg.phone;
+  document.getElementById('r_id').textContent = reg.id;
+  document.getElementById('r_date').textContent = reg.date+' '+reg.time;
+  document.getElementById('r_ochred').textContent = reg.ochred;
+}
+
+// ── RECOVER ────────────────────────────────────────
+function showRecover(){
+  document.getElementById('recoverBox').style.display='block';
+  document.getElementById('recoverBox').scrollIntoView({behavior:'smooth'});
+}
+function hideRecover(){
+  document.getElementById('recoverBox').style.display='none';
+}
+async function recoverOchred(){
+  const pass = document.getElementById('recoverPass').value.trim().toUpperCase();
+  const msg = document.getElementById('recoverMsg');
+  if(!/^[A-Z]{2}\d{7}$/.test(pass)){ showM(msg,'er','Pasport seriyasi noto\'g\'ri'); return; }
+  try{
+    const snap = await db.collection('registrations')
+      .where('passport','==',pass)
+      .where('examDate','==',TODAY)
+      .get();
+    if(snap.empty){
+      showM(msg,'er','Bugun bu pasport bilan ro\'yxat topilmadi');
+      return;
+    }
+    const reg = snap.docs[0].data();
+    myReg = reg;
+    showResult(reg);
+    hideRecover();
+    goStep(3);
+  }catch(e){ showM(msg,'er','Xato: '+e.message); }
+}
+
+// ── ASK ADMIN ──────────────────────────────────────
+function openAsk(){
+  const def = 'Imtihon qachon boshlanadi? '+(myReg?'Navbat raqamim: №'+myReg.ochred:'');
+  document.getElementById('askMsg').value = def;
+  document.getElementById('askModal').classList.add('on');
+  document.getElementById('askMsg2').className='msg';
+}
+function closeAsk(){ document.getElementById('askModal').classList.remove('on'); }
+async function sendAsk(){
+  const msg = document.getElementById('askMsg').value.trim();
+  const m2 = document.getElementById('askMsg2');
+  if(!msg){ showM(m2,'er','Xabar yozing'); return; }
+  try{
+    await db.collection('studentQuestions').add({
+      msg, from: myReg ? myReg.surname+' '+myReg.firstname : 'Noma\'lum',
+      ochred: myReg ? myReg.ochred : null,
+      passport: myReg ? myReg.passport : null,
+      date: TODAY,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showM(m2,'ok','✅ Xabar yuborildi! Admin tez orada javob beradi.');
+    setTimeout(closeAsk, 2000);
+  }catch(e){ showM(m2,'er','Xato: '+e.message); }
+}
+
+// ── PANEL ──────────────────────────────────────────
+function openHelp(){ document.getElementById('panel').classList.add('on'); document.getElementById('overlay').classList.add('on'); }
+function closeHelp(){ document.getElementById('panel').classList.remove('on'); document.getElementById('overlay').classList.remove('on'); }
+
+// ── HELPERS ────────────────────────────────────────
+function showM(el,type,text){ el.className='msg '+type; el.textContent=text; }
+function showToast(msg, dur=3000){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),dur);
+}
+</script>
+</body>
+</html>
