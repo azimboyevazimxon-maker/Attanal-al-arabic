@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#0b0e16">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Navbat">
+<link id="mani" rel="manifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>Attanal — Navbat / Очередь</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --bg:#0b0e16; --bg2:#111524; --card:#161b2d; --line:#262c44;
+  --txt:#e7ebf5; --mut:#8b93ad; --dim:#5b637e;
+  --ind:#6c7bf5; --vio:#9b6cf5; --amb:#f5a623; --grn:#2fcf78; --red:#f0556b;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:radial-gradient(1200px 600px at 50% -10%,#171d33 0,var(--bg) 60%);color:var(--txt);
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;min-height:100vh;
+  padding:max(14px,env(safe-area-inset-top)) 14px calc(20px + env(safe-area-inset-bottom));}
+.wrap{max-width:480px;margin:0 auto}
+.center{min-height:84vh;display:flex;flex-direction:column;justify-content:center}
+.spin{width:44px;height:44px;border:3px solid #2a3050;border-top-color:var(--ind);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+@keyframes pop{0%{transform:scale(.94);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 #2fcf7855}50%{box-shadow:0 0 0 14px #2fcf7800}}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15px}
+.brand .dot{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--ind),var(--vio));display:flex;align-items:center;justify-content:center;font-size:16px}
+.langs{display:flex;gap:4px;background:var(--bg2);border:1px solid var(--line);border-radius:99px;padding:3px}
+.langs button{border:none;background:transparent;color:var(--mut);font-weight:700;font-size:12px;padding:5px 11px;border-radius:99px;cursor:pointer}
+.langs button.on{background:var(--ind);color:#fff}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;animation:pop .3s ease}
+.eyebrow{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ind);font-weight:800;margin-bottom:8px}
+h1{font-size:23px;font-weight:900;line-height:1.2;margin-bottom:8px}
+.lead{color:var(--mut);font-size:14px;line-height:1.55}
+.hint{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--mut);background:#0e1322;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:12px;line-height:1.5}
+.hint .qm{flex:0 0 auto;width:18px;height:18px;border-radius:50%;background:var(--ind);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px}
+
+label{display:block;font-size:12.5px;color:var(--mut);font-weight:600;margin:14px 0 6px}
+input{width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--line);background:#0e1322;color:var(--txt);font-size:16px;outline:none;font-family:inherit;transition:border .15s}
+input:focus{border-color:var(--ind)}
+input::placeholder{color:#4b5470}
+
+.btn{width:100%;padding:15px;border-radius:14px;border:none;font-weight:800;font-size:16px;cursor:pointer;margin-top:14px;font-family:inherit;transition:transform .08s,opacity .15s}
+.btn:active{transform:scale(.985)}
+.btn.pri{background:linear-gradient(135deg,var(--ind),var(--vio));color:#fff}
+.btn.grn{background:linear-gradient(135deg,#22b46a,var(--grn));color:#fff}
+.btn.ghost{background:transparent;border:1.5px solid var(--line);color:var(--mut);font-size:14px;padding:12px}
+.btn.red{background:transparent;border:1.5px solid var(--red);color:var(--red);font-size:14px;padding:12px}
+.btn[disabled]{opacity:.45;pointer-events:none}
+
+.split{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.choice{padding:14px 10px;border-radius:14px;border:1.5px solid var(--line);background:#0e1322;color:var(--txt);font-weight:700;font-size:14px;cursor:pointer;text-align:center;transition:all .15s}
+.choice.ok.sel{border-color:var(--grn);background:#15291f;color:var(--grn)}
+.choice.no.sel{border-color:var(--amb);background:#2a2113;color:var(--amb)}
+
+.linkbox{display:flex;align-items:center;gap:10px;background:#0e1322;border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
+.linkbox a{color:var(--ind);font-weight:700;font-size:13px;text-decoration:none;word-break:break-all}
+
+.ticket{position:relative;background:linear-gradient(160deg,#1b2138,#141a2c);border:1px solid var(--line);border-radius:22px;padding:26px 22px 22px;text-align:center;overflow:hidden}
+.ticket::before,.ticket::after{content:"";position:absolute;width:26px;height:26px;border-radius:50%;background:var(--bg);top:50%;transform:translateY(-50%)}
+.ticket::before{left:-13px}.ticket::after{right:-13px}
+.ticket .perf{position:absolute;left:14px;right:14px;top:50%;border-top:2px dashed #2c3350}
+.ticket .tlbl{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--amb);font-weight:800}
+.ticket .num{font-size:96px;line-height:.95;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-3px;margin:6px 0 2px;
+  background:linear-gradient(180deg,#fff,#b9c2e6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ticket .sid{font-size:13px;color:var(--mut);margin-bottom:18px}
+.ticket .sid b{color:var(--txt);font-family:ui-monospace,monospace;letter-spacing:1px}
+.tbottom{padding-top:18px;display:flex;justify-content:space-around;gap:6px}
+.tcell{flex:1}
+.tcell .v{font-size:22px;font-weight:900}
+.tcell .k{font-size:11px;color:var(--mut);margin-top:2px}
+
+.row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 15px;margin-top:10px}
+.row .ic{font-size:20px}
+.row .t{flex:1;min-width:0}
+.row .t .a{font-weight:700;font-size:14px}
+.row .t .b{font-size:12px;color:var(--mut);margin-top:1px}
+
+.banner{border-radius:14px;padding:14px 16px;margin-top:12px;font-size:14px;font-weight:600;line-height:1.5;animation:pop .3s ease}
+.banner.info{background:#15233d;border:1px solid #2b4a7a;color:#bcd4ff}
+.banner.turn{background:#15291f;border:1px solid #2c8a55;color:#9be8bf;animation:pulse 2s infinite}
+.banner.miss{background:#2a161b;border:1px solid #6e2733;color:#ffb3bf}
+
+.now{text-align:center;margin-top:16px;padding:14px;border:1px dashed var(--line);border-radius:14px}
+.now .lab{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--mut)}
+.now .big{font-size:34px;font-weight:900;color:var(--ind);font-variant-numeric:tabular-nums;margin-top:2px}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1c2238;border:1px solid var(--line);color:#fff;padding:12px 20px;border-radius:12px;font-weight:600;font-size:14px;z-index:99;box-shadow:0 10px 30px #0009;display:none;max-width:90vw;text-align:center}
+.foot{text-align:center;color:#454d68;font-size:11px;margin-top:18px}
+.steps{display:flex;align-items:center;gap:6px;margin-bottom:16px}
+.stp{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;opacity:.45}
+.stp span{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:var(--mut)}
+.stp i{font-style:normal;font-size:10.5px;color:var(--mut);font-weight:700}
+.stp.on{opacity:1}
+.stp.on span{border-color:var(--ind);background:var(--ind);color:#fff}
+.stp.done span{border-color:var(--grn);background:#15291f;color:var(--grn)}
+.stp.done{opacity:1}
+.err{color:var(--red);font-size:12.5px;margin-top:6px;min-height:16px;font-weight:600}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top" id="topBar">
+    <div class="brand"><span class="dot">🕌</span> <span data-t="brand">Attanal · Navbat</span></div>
+    <div class="langs">
+      <button id="lUz" class="on" onclick="setLang('uz')">UZ</button>
+      <button id="lRu" onclick="setLang('ru')">RU</button>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="vLoad" class="center"><div class="spin"></div><div style="text-align:center;color:var(--mut);font-size:13px;margin-top:14px" data-t="loading">Yuklanmoqda...</div></div>
+
+  <!-- CLOSED -->
+  <div id="vClosed" class="center hide">
+    <div class="card" style="text-align:center">
+      <div style="font-size:46px;margin-bottom:6px">🔒</div>
+      <h1 data-t="closedTitle">Ro'yxat hozircha yopiq</h1>
+      <p class="lead" id="closedMsg"></p>
+      <div class="hint"><span class="qm">i</span><span data-t="closedHint">Ro'yxatdan o'tish imtihon kuni, belgilangan vaqtda ochiladi. Iltimos, o'sha paytda qayta kiring.</span></div>
+    </div>
+  </div>
+
+  <!-- INFO -->
+  <div id="vInfo" class="hide">
+    <div class="card">
+      <div class="eyebrow" data-t="welcome">Xush kelibsiz</div>
+      <h1 id="infoTitle">Attanal Al Arabic</h1>
+      <p class="lead" id="infoBody"></p>
+      <div class="row"><span class="ic">📅</span><div class="t"><div class="a" id="infoDate">—</div><div class="b" data-t="examDay">Imtihon kuni</div></div></div>
+      <div class="row"><span class="ic">⏰</span><div class="t"><div class="a" id="infoStart">—</div><div class="b" data-t="expStart">Boshlanishi kutilmoqda</div></div></div>
+      <button class="btn pri" onclick="go('form')" data-t="startReg">Ro'yxatdan o'tish →</button>
+    </div>
+    <div class="foot">Attanal Al Arabic</div>
+  </div>
+
+  <!-- FORM -->
+  <div id="vForm" class="hide">
+    <div class="card">
+      <div class="steps" id="stepBar">
+        <div class="stp on" data-s="1"><span>1</span><i data-t="sLbl1">Ma'lumot</i></div>
+        <div class="stp" data-s="2"><span>2</span><i data-t="sLbl2">At-Tanal</i></div>
+        <div class="stp" data-s="3"><span>3</span><i data-t="sLbl3">Tasdiq</i></div>
+      </div>
+
+      <!-- STEP 1 -->
+      <div id="fStep1">
+        <div class="eyebrow" data-t="step1">1-qadam · Ma'lumotlaringiz</div>
+        <h1 data-t="formTitle">Ro'yxatdan o'tish</h1>
+        <div class="hint"><span class="qm">!</span><span data-t="passHint">Ism, familiya va pasport seriyasini PASPORTDAGIDEK aniq, xatosiz yozing. Xato yozsangiz ro'yxatga olinmasligingiz mumkin.</span></div>
+        <label data-t="lName">Ism</label>
+        <input id="iName" autocomplete="off" data-ph="phName" placeholder="Ismingizni kiriting" oninput="this.value=capName(this.value)">
+        <label data-t="lSurname">Familiya</label>
+        <input id="iSurname" autocomplete="off" data-ph="phSurname" placeholder="Familiyangizni kiriting" oninput="this.value=capName(this.value)">
+        <label data-t="lPass">Pasport seriya raqami</label>
+        <input id="iPass" autocomplete="off" placeholder="AD 1234567" oninput="this.value=fmtPass(this.value)">
+        <label data-t="lPhone">Telefon raqami</label>
+        <input id="iPhone" inputmode="tel" autocomplete="off" value="+998 " placeholder="+998 90 123 45 67" oninput="this.value=fmtPhone(this.value)" onfocus="if(!this.value)this.value='+998 '">
+        <div class="err" id="err1"></div>
+        <button class="btn pri" onclick="stepTo(2)" data-t="next">Davom etish →</button>
+        <button class="btn ghost" onclick="go('info')" data-t="back">← Orqaga</button>
+      </div>
+
+      <!-- STEP 2 -->
+      <div id="fStep2" class="hide">
+        <div class="eyebrow" data-t="step2">2-qadam · At-Tanal ro'yxati</div>
+        <h1 data-t="regTitle">Ro'yxatdan o'tdingizmi?</h1>
+        <p class="lead" data-t="regAsk">Quyidagi saytda ro'yxatdan o'tgan bo'lishingiz shart. Avval o'sha saytga o'ting, keyin pastdan tanlang:</p>
+        <div class="linkbox"><span>🔗</span><a id="regLink" href="https://altanal_reg.eexam.uk/" target="_blank" rel="noopener">altanal_reg.eexam.uk</a></div>
+        <div class="split">
+          <button type="button" id="chOk" class="choice ok" onclick="setReg('ottim')" data-t="iDid">✅ Ro'yxatdan o'tdim</button>
+          <button type="button" id="chNo" class="choice no" onclick="setReg('otaolmadim')" data-t="iCant">❌ O'ta olmadim</button>
+        </div>
+        <div id="noWarn" class="banner miss hide" style="margin-top:10px;font-size:13px"></div>
+        <div class="err" id="err2"></div>
+        <button class="btn pri" onclick="stepTo(3)" data-t="next">Davom etish →</button>
+        <button class="btn ghost" onclick="stepTo(1)" data-t="back">← Orqaga</button>
+      </div>
+
+      <!-- STEP 3 -->
+      <div id="fStep3" class="hide">
+        <div class="eyebrow" data-t="step3">3-qadam · Tasdiqlash</div>
+        <h1 data-t="confirmTitle">Ma'lumotni tekshiring</h1>
+        <div class="hint"><span class="qm">i</span><span data-t="confirmHint">Quyidagilar to'g'rimi? Xato bo'lsa orqaga qaytib tuzating. Tasdiqlasangiz navbat raqami beriladi.</span></div>
+        <div class="row"><span class="ic">👤</span><div class="t"><div class="a" id="rvName">—</div><div class="b" data-t="rvNameL">Ism familiya</div></div></div>
+        <div class="row"><span class="ic">🪪</span><div class="t"><div class="a" id="rvPass">—</div><div class="b" data-t="rvPassL">Pasport</div></div></div>
+        <div class="row"><span class="ic">📞</span><div class="t"><div class="a" id="rvPhone">—</div><div class="b" data-t="rvPhoneL">Telefon</div></div></div>
+        <div class="row"><span class="ic">📝</span><div class="t"><div class="a" id="rvReg">—</div><div class="b" data-t="rvRegL">At-Tanal ro'yxati</div></div></div>
+        <div class="err" id="formErr"></div>
+        <button class="btn grn" id="submitBtn" onclick="submitReg()" data-t="getTicket">Navbat olish 🎫</button>
+        <button class="btn ghost" onclick="stepTo(2)" data-t="back">← Orqaga</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TICKET -->
+  <div id="vTicket" class="hide">
+    <div id="turnBanner"></div>
+    <div class="ticket" style="margin-top:12px">
+      <div class="tlbl" data-t="yourNo">Sizning navbatingiz</div>
+      <div class="num" id="tNum">0</div>
+      <div class="sid"><span data-t="idLabel">ID</span>: <b id="tSid">—</b></div>
+      <div class="perf"></div>
+      <div class="tbottom">
+        <div class="tcell"><div class="v" id="tAhead" style="color:var(--amb)">0</div><div class="k" data-t="ahead">Oldingizda</div></div>
+        <div class="tcell"><div class="v" id="tWait" style="color:var(--ind)">~0</div><div class="k" data-t="estWait">Taxminiy kutish</div></div>
+      </div>
+    </div>
+
+    <div class="now">
+      <div class="lab" data-t="nowServing">Hozir qabulda</div>
+      <div class="big" id="tNow">—</div>
+    </div>
+
+    <div id="noticeBanner" class="hide"></div>
+
+    <div class="row" id="tNameRow"><span class="ic">👤</span><div class="t"><div class="a" id="tName">—</div><div class="b" id="tWeekDate">—</div></div></div>
+
+    <div class="hint"><span class="qm">i</span><span data-t="ticketHint">Bu sahifani yopmang. Navbatingiz yaqinlashganda shu yerda ko'rsatiladi. Navbatingiz kelganda 5 daqiqa ichida kirishingiz kerak, aks holda navbat kuyadi va oxiriga tushasiz.</span></div>
+
+    <button class="btn red" onclick="leaveQueue()" data-t="leave">Navbatdan chiqish</button>
+    <div class="foot">Attanal Al Arabic</div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const fbConfig = {
+  apiKey: "AIzaSyDjTk7bIALu_YHT49yOV4u9YvNGTD4mOsY",
+  authDomain: "attanal-al-arabic.firebaseapp.com",
+  projectId: "attanal-al-arabic",
+  storageBucket: "attanal-al-arabic.firebasestorage.app",
+  messagingSenderId: "46853290812",
+  appId: "1:46853290812:web:9f91c344c9765b37487c39"
+};
+firebase.initializeApp(fbConfig);
+const db = firebase.firestore();
+
+const DEFAULT_REG_LINK = "https://altanal_reg.eexam.uk/";
+const DEFAULT_AVG = 5;
+const PENALTY = 3;
+
+const I = {
+  brand:{uz:"Attanal · Navbat",ru:"Attanal · Очередь"},
+  loading:{uz:"Yuklanmoqda...",ru:"Загрузка..."},
+  welcome:{uz:"Xush kelibsiz",ru:"Добро пожаловать"},
+  examDay:{uz:"Imtihon kuni",ru:"День экзамена"},
+  expStart:{uz:"Boshlanishi kutilmoqda",ru:"Ожидаемое начало"},
+  startReg:{uz:"Ro'yxatdan o'tish →",ru:"Зарегистрироваться →"},
+  sLbl1:{uz:"Ma'lumot",ru:"Данные"},sLbl2:{uz:"At-Tanal",ru:"At-Tanal"},sLbl3:{uz:"Tasdiq",ru:"Подтвердить"},
+  next:{uz:"Davom etish →",ru:"Далее →"},
+  lPhone:{uz:"Telefon raqami",ru:"Номер телефона"},
+  regTitle:{uz:"Ro'yxatdan o'tdingizmi?",ru:"Вы зарегистрировались?"},
+  step3:{uz:"3-qadam · Tasdiqlash",ru:"Шаг 3 · Подтверждение"},
+  confirmTitle:{uz:"Ma'lumotni tekshiring",ru:"Проверьте данные"},
+  confirmHint:{uz:"Quyidagilar to'g'rimi? Xato bo'lsa orqaga qaytib tuzating. Tasdiqlasangiz navbat raqami beriladi.",ru:"Всё верно? Если нет — вернитесь и исправьте. После подтверждения вы получите номер очереди."},
+  rvNameL:{uz:"Ism familiya",ru:"Имя и фамилия"},rvPassL:{uz:"Pasport",ru:"Паспорт"},rvPhoneL:{uz:"Telefon",ru:"Телефон"},rvRegL:{uz:"At-Tanal ro'yxati",ru:"Регистрация At-Tanal"},
+  regYes:{uz:"Ro'yxatdan o'tgan",ru:"Зарегистрирован"},regNo:{uz:"O'ta olmagan",ru:"Не прошёл"},
+  errPhone:{uz:"Telefon raqamini to'g'ri yozing (masalan +998 90 123 45 67).",ru:"Укажите номер телефона верно (например +998 90 123 45 67)."},
+  step1:{uz:"1-qadam · Ma'lumotlaringiz",ru:"Шаг 1 · Ваши данные"},
+  step2:{uz:"2-qadam · At-Tanal ro'yxati",ru:"Шаг 2 · Регистрация At-Tanal"},
+  formTitle:{uz:"Ro'yxatdan o'tish",ru:"Регистрация"},
+  passHint:{uz:"Ism, familiya va pasport seriyasini PASPORTDAGIDEK aniq, xatosiz yozing. Xato yozsangiz ro'yxatga olinmasligingiz mumkin.",ru:"Имя, фамилию и серию паспорта пишите ТОЧНО как в паспорте, без ошибок. При ошибке вас могут не принять на регистрацию."},
+  lName:{uz:"Ism",ru:"Имя"},lSurname:{uz:"Familiya",ru:"Фамилия"},lPass:{uz:"Pasport seriya raqami",ru:"Серия и номер паспорта"},
+  phName:{uz:"Ismingizni kiriting",ru:"Введите имя"},phSurname:{uz:"Familiyangizni kiriting",ru:"Введите фамилию"},
+  regAsk:{uz:"Quyidagi saytda ro'yxatdan o'tgan bo'lishingiz shart. Avval o'sha saytga o'ting, keyin pastdan tanlang:",ru:"Вы обязаны зарегистрироваться на сайте ниже. Сначала перейдите туда, затем выберите:"},
+  iDid:{uz:"✅ Ro'yxatdan o'tdim",ru:"✅ Зарегистрировался"},iCant:{uz:"❌ O'ta olmadim",ru:"❌ Не смог"},
+  getTicket:{uz:"Navbat olish 🎫",ru:"Получить очередь 🎫"},back:{uz:"← Orqaga",ru:"← Назад"},
+  yourNo:{uz:"Sizning navbatingiz",ru:"Ваша очередь"},idLabel:{uz:"ID",ru:"ID"},
+  ahead:{uz:"Oldingizda (kishi)",ru:"Перед вами (чел.)"},estWait:{uz:"Taxminiy kutish (daq)",ru:"Ожидание (мин)"},
+  nowServing:{uz:"Hozir qabulda",ru:"Сейчас принимается"},
+  ticketHint:{uz:"Bu sahifani yopmang. Navbatingiz yaqinlashganda shu yerda ko'rsatiladi. Navbatingiz kelganda 5 daqiqa ichida kirishingiz kerak, aks holda navbat kuyadi va oxiriga tushasiz.",ru:"Не закрывайте страницу. Когда подойдёт очередь — здесь появится. Нужно войти в течение 5 минут, иначе очередь сгорит и вы попадёте в конец."},
+  leave:{uz:"Navbatdan chiqish",ru:"Выйти из очереди"},
+  closedTitle:{uz:"Ro'yxat hozircha yopiq",ru:"Регистрация закрыта"},
+  closedHint:{uz:"Ro'yxatdan o'tish imtihon kuni, belgilangan vaqtda ochiladi. Iltimos, o'sha paytda qayta kiring.",ru:"Регистрация открывается в день экзамена в назначенное время. Зайдите снова в это время."},
+  turnNow:{uz:"🔔 Navbatingiz keldi! 5 daqiqa ichida ro'yxat stoliga keling.",ru:"🔔 Ваша очередь! Подойдите к столу регистрации в течение 5 минут."},
+  missTxt:{uz:"Vaqtida kelmadingiz — navbatingiz kuydi. Endi navbatning oxiriga tushdingiz.",ru:"Вы не пришли вовремя — очередь сгорела. Вы перемещены в конец."},
+  doneTxt:{uz:"✅ Ro'yxatga qabul qilindingiz. Endi ko'rsatma bo'yicha davom eting. Omad!",ru:"✅ Вы приняты на регистрацию. Следуйте указаниям. Удачи!"},
+  noWarnTxt:{uz:"Diqqat: At-Tanal saytidan o'tmaganingiz uchun navbatingiz "+PENALTY+" ta orqaga suriladi. Iloji bo'lsa avval o'sha saytdan ro'yxatdan o'ting.",ru:"Внимание: т.к. вы не прошли регистрацию на сайте At-Tanal, ваша очередь сдвинется на "+PENALTY+" назад. По возможности сначала зарегистрируйтесь там."},
+  errName:{uz:"Ism va familiyani to'liq yozing.",ru:"Укажите имя и фамилию полностью."},
+  errPass:{uz:"Pasport seriyasini to'g'ri yozing (masalan AD 1234567).",ru:"Укажите серию паспорта верно (например AD 1234567)."},
+  errReg:{uz:"At-Tanal ro'yxati bo'yicha tanlovni belgilang.",ru:"Отметьте статус регистрации At-Tanal."},
+  errDup:{uz:"Bu ism-familiya yoki pasport bilan allaqachon ro'yxatdan o'tilgan. Bir kishi faqat bir marta o'tadi.",ru:"С этим именем или паспортом уже зарегистрировано. Один человек — один раз."},
+  errNet:{uz:"Internet bilan muammo. Qayta urinib ko'ring.",ru:"Проблема с интернетом. Попробуйте снова."},
+  okReg:{uz:"Tayyor! Navbatingiz olindi.",ru:"Готово! Очередь получена."},
+  leaveConfirm:{uz:"Navbatdan chiqasizmi? Bu amalni qaytarib bo'lmaydi.",ru:"Выйти из очереди? Это необратимо."},
+  leftTxt:{uz:"Siz navbatdan chiqdingiz.",ru:"Вы вышли из очереди."},
+};
+let lang = localStorage.getItem("attLang") || "uz";
+
+function setLang(l){lang=l;localStorage.setItem("attLang",l);document.getElementById("lUz").classList.toggle("on",l==="uz");document.getElementById("lRu").classList.toggle("on",l==="ru");applyLang();renderTicket()}
+function applyLang(){
+  document.querySelectorAll("[data-t]").forEach(el=>{const k=el.getAttribute("data-t");if(I[k])el.textContent=I[k][lang]});
+  document.querySelectorAll("[data-ph]").forEach(el=>{const k=el.getAttribute("data-ph");if(I[k])el.placeholder=I[k][lang]});
+  document.documentElement.lang=lang;
+  renderInfoTexts();
+}
+function t(k){return (I[k]&&I[k][lang])||k}
+
+function toast(m){const e=document.getElementById("toast");e.textContent=m;e.style.display="block";clearTimeout(window._t);window._t=setTimeout(()=>e.style.display="none",3000)}
+function fmtPass(v){let s=(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"");let m=s.match(/^([A-Z]{0,2})([0-9]{0,7})/);let L=m?m[1]:"",d=m?m[2]:"";return d?(L+" "+d):L}
+function capName(v){return (v||"").replace(/(^|[\s\-'’])(\p{L})/gu,(m,p,c)=>p+c.toUpperCase())}
+function fmtPhone(v){
+  let d=(v||"").replace(/\D/g,"");
+  if(d.startsWith("998"))d=d.slice(3);
+  d=d.slice(0,9);
+  let out="+998";
+  if(d.length>0)out+=" "+d.slice(0,2);
+  if(d.length>2)out+=" "+d.slice(2,5);
+  if(d.length>5)out+=" "+d.slice(5,7);
+  if(d.length>7)out+=" "+d.slice(7,9);
+  return out;
+}
+function val(id){return (document.getElementById(id).value||"").trim()}
+function e1(m){document.getElementById("err1").textContent=m||""}
+function e2(m){document.getElementById("err2").textContent=m||""}
+function norm(s){return (s==null?"":String(s)).toLowerCase().replace(/[^\p{L}\p{N}]/gu,"")}
+function views(){return ["vLoad","vClosed","vInfo","vForm","vTicket"]}
+function show(id){views().forEach(v=>document.getElementById(v).classList.toggle("hide",v!==id))}
+function go(name){const map={info:"vInfo",form:"vForm",ticket:"vTicket"};show(map[name]);if(name==="form"){showStep(1);setTimeout(()=>document.getElementById("iName").focus(),100)}}
+
+let curStep=1;
+function setStepBar(n){document.querySelectorAll("#stepBar .stp").forEach(el=>{const s=+el.getAttribute("data-s");el.classList.toggle("on",s===n);el.classList.toggle("done",s<n)})}
+function showStep(n){curStep=n;["fStep1","fStep2","fStep3"].forEach((id,i)=>document.getElementById(id).classList.toggle("hide",(i+1)!==n));setStepBar(n)}
+function valStep1(){
+  const name=val("iName"),sur=val("iSurname"),pass=val("iPass").toUpperCase(),phone=val("iPhone");
+  if(!name||!sur)return t("errName");
+  if(!/^[A-Z]{2}\s?\d{7}$/.test(pass))return t("errPass");
+  const pd=phone.replace(/\D/g,"").replace(/^998/,"");
+  if(pd.length!==9)return t("errPhone");
+  return "";
+}
+function stepTo(n){
+  if(n>curStep){
+    if(curStep===1){const er=valStep1();if(er){e1(er);return}e1("")}
+    if(curStep===2){if(!regChosen){e2(t("errReg"));return}e2("")}
+  }
+  if(n===3)buildReview();
+  showStep(n);
+}
+function buildReview(){
+  document.getElementById("rvName").textContent=val("iName")+" "+val("iSurname");
+  document.getElementById("rvPass").textContent=val("iPass").toUpperCase();
+  document.getElementById("rvPhone").textContent=val("iPhone")||"—";
+  document.getElementById("rvReg").textContent=regChosen==="ottim"?t("regYes"):(regChosen==="otaolmadim"?t("regNo"):"—");
+}
+
+(function(){try{const m={name:"Attanal Navbat",short_name:"Navbat",start_url:".",scope:".",display:"standalone",background_color:"#0b0e16",theme_color:"#0b0e16",icons:[{src:"icon-192.png",sizes:"192x192",type:"image/png"},{src:"icon-512.png",sizes:"512x512",type:"image/png"}]};document.getElementById("mani").href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:"application/manifest+json"}))}catch(e){}})();
+
+let cfg=null, regChosen=null, myReg=null, myUnsub=null, cdTimer=null, dayRegs=[], savedRegId=null, regsUnsub=null, missGuard=null;
+
+// 5 daqiqa o'tsa o'zini avtomatik navbat oxiriga tushiradi
+async function autoMissSelf(){
+  if(!myReg||myReg.status!=="called")return;
+  if(missGuard===myReg.calledAt)return; missGuard=myReg.calledAt;
+  const maxEff=Math.max(0,...dayRegs.map(r=>Number(r.effectiveNo||r.queueNo)||0));
+  try{await db.collection("registrations").doc(myReg.id).update({status:"missed",effectiveNo:maxEff+1,missedAt:new Date().toISOString()});}catch(e){missGuard=null}
+}
+
+function regAllowed(c){
+  if(!c||!c.open)return false;
+  const now=Date.now();
+  if(c.fromAt && now < Date.parse(c.fromAt))return false;
+  if(c.toAt && now > Date.parse(c.toAt))return false;
+  return true;
+}
+function dayId(){return (cfg&&cfg.examDate)||new Date().toISOString().slice(0,10)}
+function lsKey(){return "attReg_"+dayId()}
+
+function renderInfoTexts(){
+  if(!cfg)return;
+  document.getElementById("infoTitle").textContent = cfg.examTitle || "Attanal Al Arabic";
+  document.getElementById("infoBody").textContent = cfg.examInfo || (lang==="uz"
+    ? "Bugungi imtihonimiz quyidagi vaqtda boshlanishi kutilmoqda. Sabr-toqatingiz uchun rahmat."
+    : "Сегодняшний экзамен ожидается в указанное время. Спасибо за ваше терпение.");
+  document.getElementById("infoDate").textContent = cfg.examDate ? new Date(cfg.examDate+"T00:00:00").toLocaleDateString(lang==="uz"?"uz-UZ":"ru-RU",{day:"2-digit",month:"long",year:"numeric"}) : "—";
+  document.getElementById("infoStart").textContent = cfg.expectedStart || "—";
+  const closed=document.getElementById("closedMsg");
+  if(closed){const now=Date.now();let msg;
+    if(cfg.open && cfg.toAt && now>Date.parse(cfg.toAt)) msg = lang==="uz"?"Bugungi ro'yxat yakunlandi.":"Регистрация на сегодня завершена.";
+    else if(cfg.open && cfg.fromAt && now<Date.parse(cfg.fromAt)) msg = (lang==="uz"?"Ro'yxat ":"Регистрация в ")+new Date(cfg.fromAt).toLocaleTimeString(lang==="uz"?"uz-UZ":"ru-RU",{hour:"2-digit",minute:"2-digit"})+(lang==="uz"?" da ochiladi.":" откроется.");
+    else msg = lang==="uz"?"Ro'yxatdan o'tish hali ochilmagan.":"Регистрация ещё не открыта.";
+    closed.textContent=msg;
+  }
+}
+
+db.collection("config").doc("queue").onSnapshot(d=>{
+  cfg = d.exists ? d.data() : {open:false};
+  if(cfg.regLink){const a=document.getElementById("regLink");a.href=cfg.regLink;a.textContent=(cfg.regLink||DEFAULT_REG_LINK).replace(/^https?:\/\//,"").replace(/\/$/,"")}
+  applyLang();
+  route();
+  if(myReg)renderTicket();
+}, err=>{ show("vClosed"); });
+
+function route(){
+  let saved=null;try{saved=JSON.parse(localStorage.getItem(lsKey())||"null")}catch(e){}
+  savedRegId = (saved&&saved.regId)?saved.regId:null;
+  if(savedRegId){ subDayRegs(); show("vTicket"); return; }
+  if(!regAllowed(cfg)){ renderInfoTexts(); show("vClosed"); return; }
+  const cur=views().find(v=>!document.getElementById(v).classList.contains("hide"));
+  if(cur==="vForm"||cur==="vTicket")return;
+  renderInfoTexts(); show("vInfo");
+}
+
+// barcha bugungi ro'yxatlarni kuzatamiz -> navbatni HAQIQIY odamlar soni bo'yicha hisoblaymiz (bo'sh joy qolmaydi)
+function subDayRegs(){
+  if(regsUnsub)regsUnsub();
+  const day=dayId();
+  regsUnsub=db.collection("registrations").where("day","==",day).onSnapshot(snap=>{
+    dayRegs=[];snap.forEach(d=>dayRegs.push({id:d.id,...d.data()}));
+    if(savedRegId){
+      const found=dayRegs.find(r=>r.id===savedRegId);
+      if(!found){ localStorage.removeItem(lsKey());savedRegId=null;myReg=null;route();return; }
+      myReg=found;renderTicket();
+    }
+  },e=>{});
+}
+
+function setReg(v){
+  regChosen=v;
+  document.getElementById("chOk").classList.toggle("sel",v==="ottim");
+  document.getElementById("chNo").classList.toggle("sel",v==="otaolmadim");
+  const w=document.getElementById("noWarn");
+  if(v==="otaolmadim"){w.textContent=t("noWarnTxt");w.classList.remove("hide")}else w.classList.add("hide");
+}
+async function submitReg(){
+  const err=document.getElementById("formErr");err.textContent="";
+  const name=val("iName"),surname=val("iSurname"),pass=val("iPass").toUpperCase(),phone=val("iPhone");
+  const er=valStep1();if(er){showStep(1);e1(er);return}
+  if(!regChosen){showStep(2);e2(t("errReg"));return}
+  if(!regAllowed(cfg)){route();return}
+  const btn=document.getElementById("submitBtn");btn.disabled=true;
+  const fullKey=norm(name+surname), passKey=norm(pass), day=dayId();
+  let done=false;
+  const guard=setTimeout(()=>{if(!done){btn.disabled=false;err.textContent=t("errNet")}},15000);
+  try{
+    // dedup: bitta maydonli so'rovlar (indeks talab qilmaydi) — boshqa qurilma/brauzerdan ham aniqlaydi
+    let existDoc=null;
+    try{
+      const [byPass,byName]=await Promise.all([
+        db.collection("registrations").where("passKey","==",passKey).get(),
+        db.collection("registrations").where("fullKey","==",fullKey).get()
+      ]);
+      existDoc=[...byPass.docs,...byName.docs].find(d=>{const x=d.data();return x.day===day && x.status!=="left"})||null;
+    }catch(e){existDoc=null}
+    if(existDoc){
+      done=true;clearTimeout(guard);
+      const x=existDoc.data();
+      localStorage.setItem(lsKey(),JSON.stringify({regId:existDoc.id,queueNo:x.queueNo,sid:x.sid}));
+      savedRegId=existDoc.id;subDayRegs();show("vTicket");
+      toast(t("errDup"));btn.disabled=false;return;
+    }
+    const penalty=regChosen==="otaolmadim"?PENALTY:0;
+    const counterRef=db.collection("queueCounters").doc(day);
+    const regRef=db.collection("registrations").doc();
+    const sid=Math.random().toString(36).slice(2,7).toUpperCase();
+    const res=await db.runTransaction(async tx=>{
+      const c=await tx.get(counterRef);
+      const last=c.exists?(c.data().last||0):0;
+      const no=last+1;
+      tx.set(counterRef,{last:no,date:day,updatedAt:new Date().toISOString()},{merge:true});
+      tx.set(regRef,{
+        name,surname,passport:pass,phone,fullKey,passKey,day,
+        queueNo:no,effectiveNo:no+penalty,penalty,sid,
+        regStatus:regChosen,status:"waiting",lang,createdAt:new Date().toISOString()
+      });
+      return no;
+    });
+    done=true;clearTimeout(guard);
+    localStorage.setItem(lsKey(),JSON.stringify({regId:regRef.id,queueNo:res,sid}));
+    savedRegId=regRef.id;subDayRegs();show("vTicket");toast(t("okReg"));
+  }catch(e){done=true;clearTimeout(guard);err.textContent=t("errNet")+" ("+(e.code||e.message||"")+")";btn.disabled=false}
+}
+
+function attachReg(){/* eski usul olib tashlandi — subDayRegs ishlatiladi */}
+
+function renderTicket(){
+  if(!myReg)return;
+  // jonli pozitsiya: barcha (chiqmaganlar) ichida o'rin -> jami odam = jami raqam, kelmagani oxiriga
+  const serve=dayRegs.filter(r=>r.status!=="left")
+    .sort((a,b)=>((a.effectiveNo||a.queueNo||0)-(b.effectiveNo||b.queueNo||0))||((a.createdAt||"")<(b.createdAt||"")?-1:1));
+  const idx=serve.findIndex(r=>r.id===myReg.id);
+  const myPos = idx<0 ? (myReg.queueNo||"—") : (idx+1);
+  document.getElementById("tNum").textContent=myPos;
+  document.getElementById("tSid").textContent=myReg.sid||"—";
+  document.getElementById("tName").textContent=(myReg.name||"")+" "+(myReg.surname||"");
+  document.getElementById("tWeekDate").textContent = cfg&&cfg.examDate ? new Date(cfg.examDate+"T00:00:00").toLocaleDateString(lang==="uz"?"uz-UZ":"ru-RU") : "";
+  // oldimda turgan (hali kirmagan) odamlar
+  const aheadCount = idx<0?0: serve.slice(0,idx).filter(r=>r.status==="waiting"||r.status==="called").length;
+  const avg = (cfg&&Number(cfg.avgMinutes)>0)?Number(cfg.avgMinutes):DEFAULT_AVG;
+  const called=dayRegs.find(r=>r.status==="called");
+  const calledPos = called? (serve.findIndex(r=>r.id===called.id)+1) : 0;
+  document.getElementById("tAhead").textContent = aheadCount;
+  document.getElementById("tWait").textContent = "~"+(aheadCount*avg);
+  document.getElementById("tNow").textContent = calledPos?("№ "+calledPos):"—";
+
+  const nb=document.getElementById("noticeBanner");
+  if(cfg&&cfg.notice&&cfg.notice.text){nb.className="banner info";nb.textContent="📢 "+cfg.notice.text}
+  else nb.className="hide";
+
+  const tb=document.getElementById("turnBanner");
+  clearInterval(cdTimer);
+  if(myReg.status==="done"){tb.className="banner turn";tb.textContent=t("doneTxt");}
+  else if(myReg.status==="missed"){tb.className="banner miss";tb.textContent=t("missTxt");}
+  else if(myReg.status==="called"){
+    tb.className="banner turn";
+    const startTurn=()=>{
+      const left=5*60 - Math.floor((Date.now()-Date.parse(myReg.calledAt||new Date().toISOString()))/1000);
+      const mm=Math.max(0,Math.floor(left/60)), ss=Math.max(0,left%60);
+      tb.textContent=t("turnNow")+"  ("+mm+":"+String(ss).padStart(2,"0")+")";
+      if(left<=0){clearInterval(cdTimer);autoMissSelf();}
+    };
+    startTurn();cdTimer=setInterval(startTurn,1000);
+  }
+  else tb.className="hide";
+}
+
+async function leaveQueue(){
+  if(!myReg)return;
+  if(!confirm(t("leaveConfirm")))return;
+  try{await db.collection("registrations").doc(myReg.id).update({status:"left",leftAt:new Date().toISOString()});}catch(e){}
+  localStorage.removeItem(lsKey());savedRegId=null;if(regsUnsub)regsUnsub();myReg=null;
+  toast(t("leftTxt"));route();
+}
+
+applyLang();
+</script>
+</body>
+</html>
