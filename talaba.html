@@ -14,6 +14,7 @@
 <title>Attanal — Navbat / Очередь</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <style>
 :root{
   --bg:#0b0e16; --bg2:#111524; --card:#161b2d; --line:#262c44;
@@ -250,6 +251,18 @@ const fbConfig = {
 firebase.initializeApp(fbConfig);
 const db = firebase.firestore();
 
+// Every write (registration, leave, auto-miss) needs a real request.auth.uid
+// for the queue/registrations Firestore rules to authorize it. Reads of
+// config/queue and queue/* stay public and don't wait on this.
+let currentUid = null;
+let _authReadyResolve;
+const authReady = new Promise((res) => { _authReadyResolve = res; });
+firebase.auth().onAuthStateChanged(async (fbUser) => {
+  if (fbUser) { currentUid = fbUser.uid; _authReadyResolve(); return; }
+  try { await firebase.auth().signInAnonymously(); }
+  catch (e) { console.error("anon sign-in failed", e); }
+});
+
 const DEFAULT_REG_LINK = "https://altanal_reg.eexam.uk/";
 const DEFAULT_AVG = 5;
 const PENALTY = 3;
@@ -363,14 +376,15 @@ function buildReview(){
 
 (function(){try{const m={name:"Attanal Navbat",short_name:"Navbat",start_url:".",scope:".",display:"standalone",background_color:"#0b0e16",theme_color:"#0b0e16",icons:[{src:"icon-192.png",sizes:"192x192",type:"image/png"},{src:"icon-512.png",sizes:"512x512",type:"image/png"}]};document.getElementById("mani").href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:"application/manifest+json"}))}catch(e){}})();
 
-let cfg=null, regChosen=null, myReg=null, myUnsub=null, cdTimer=null, dayRegs=[], savedRegId=null, regsUnsub=null, missGuard=null;
+let cfg=null, regChosen=null, myReg=null, myProfile=null, myUnsub=null, cdTimer=null, dayRegs=[], savedRegId=null, regsUnsub=null, missGuard=null;
 
 // 5 daqiqa o'tsa o'zini avtomatik navbat oxiriga tushiradi
 async function autoMissSelf(){
   if(!myReg||myReg.status!=="called")return;
   if(missGuard===myReg.calledAt)return; missGuard=myReg.calledAt;
   const maxEff=Math.max(0,...dayRegs.map(r=>Number(r.effectiveNo||r.queueNo)||0));
-  try{await db.collection("registrations").doc(myReg.id).update({status:"missed",effectiveNo:maxEff+1,missedAt:new Date().toISOString()});}catch(e){missGuard=null}
+  await authReady;
+  try{await db.collection("queue").doc(myReg.id).update({status:"missed",effectiveNo:maxEff+1,missedAt:new Date().toISOString()});}catch(e){missGuard=null}
 }
 
 function regAllowed(c){
@@ -411,6 +425,7 @@ db.collection("config").doc("queue").onSnapshot(d=>{
 function route(){
   let saved=null;try{saved=JSON.parse(localStorage.getItem(lsKey())||"null")}catch(e){}
   savedRegId = (saved&&saved.regId)?saved.regId:null;
+  myProfile = saved ? {name:saved.name||"", surname:saved.surname||""} : null;
   if(savedRegId){ subDayRegs(); show("vTicket"); return; }
   if(!regAllowed(cfg)){ renderInfoTexts(); show("vClosed"); return; }
   const cur=views().find(v=>!document.getElementById(v).classList.contains("hide"));
@@ -418,11 +433,11 @@ function route(){
   renderInfoTexts(); show("vInfo");
 }
 
-// barcha bugungi ro'yxatlarni kuzatamiz -> navbatni HAQIQIY odamlar soni bo'yicha hisoblaymiz (bo'sh joy qolmaydi)
+// barcha bugungi navbat holatini kuzatamiz (PII yo'q, ochiq o'qiladi) -> navbatni HAQIQIY odamlar soni bo'yicha hisoblaymiz (bo'sh joy qolmaydi)
 function subDayRegs(){
   if(regsUnsub)regsUnsub();
   const day=dayId();
-  regsUnsub=db.collection("registrations").where("day","==",day).onSnapshot(snap=>{
+  regsUnsub=db.collection("queue").where("day","==",day).onSnapshot(snap=>{
     dayRegs=[];snap.forEach(d=>dayRegs.push({id:d.id,...d.data()}));
     if(savedRegId){
       const found=dayRegs.find(r=>r.id===savedRegId);
@@ -446,46 +461,46 @@ async function submitReg(){
   if(!regChosen){showStep(2);e2(t("errReg"));return}
   if(!regAllowed(cfg)){route();return}
   const btn=document.getElementById("submitBtn");btn.disabled=true;
-  const fullKey=norm(name+surname), passKey=norm(pass), day=dayId();
+  const passKey=norm(pass), day=dayId();
   let done=false;
   const guard=setTimeout(()=>{if(!done){btn.disabled=false;err.textContent=t("errNet")}},15000);
   try{
-    // dedup: bitta maydonli so'rovlar (indeks talab qilmaydi) — boshqa qurilma/brauzerdan ham aniqlaydi
-    let existDoc=null;
-    try{
-      const [byPass,byName]=await Promise.all([
-        db.collection("registrations").where("passKey","==",passKey).get(),
-        db.collection("registrations").where("fullKey","==",fullKey).get()
-      ]);
-      existDoc=[...byPass.docs,...byName.docs].find(d=>{const x=d.data();return x.day===day && x.status!=="left"})||null;
-    }catch(e){existDoc=null}
-    if(existDoc){
-      done=true;clearTimeout(guard);
-      const x=existDoc.data();
-      localStorage.setItem(lsKey(),JSON.stringify({regId:existDoc.id,queueNo:x.queueNo,sid:x.sid}));
-      savedRegId=existDoc.id;subDayRegs();show("vTicket");
-      toast(t("errDup"));btn.disabled=false;return;
-    }
+    await authReady;
+    if(!currentUid){done=true;clearTimeout(guard);err.textContent=t("errNet");btn.disabled=false;return}
     const penalty=regChosen==="otaolmadim"?curPenalty():0;
     const counterRef=db.collection("queueCounters").doc(day);
+    const dedupRef=db.collection("dedup").doc(day+"_"+passKey);
     const regRef=db.collection("registrations").doc();
+    const queueRef=db.collection("queue").doc(regRef.id);
     const sid=Math.random().toString(36).slice(2,7).toUpperCase();
+    // dedup endi server tomonda, tranzaksiya ichida, faqat pasport bo'yicha
+    // qat'iy tekshiriladi — boshqa qurilma/brauzerdan ham aniqlaydi.
     const res=await db.runTransaction(async tx=>{
+      const dSnap=await tx.get(dedupRef);
+      if(dSnap.exists) throw new Error("DUP");
       const c=await tx.get(counterRef);
       const last=c.exists?(c.data().last||0):0;
       const no=last+1;
       tx.set(counterRef,{last:no,date:day,updatedAt:new Date().toISOString()},{merge:true});
-      tx.set(regRef,{
-        name,surname,passport:pass,phone,fullKey,passKey,day,
-        queueNo:no,effectiveNo:no+penalty,penalty,sid,
-        regStatus:regChosen,status:"waiting",lang,createdAt:new Date().toISOString()
+      tx.set(dedupRef,{day,passKey,regId:regRef.id,createdAt:new Date().toISOString()});
+      tx.set(regRef,{name,surname,passport:pass,phone,ownerUid:currentUid,createdAt:new Date().toISOString()});
+      tx.set(queueRef,{
+        day,queueNo:no,effectiveNo:no+penalty,penalty,sid,
+        regStatus:regChosen,status:"waiting",ownerUid:currentUid,createdAt:new Date().toISOString()
       });
       return no;
     });
     done=true;clearTimeout(guard);
-    localStorage.setItem(lsKey(),JSON.stringify({regId:regRef.id,queueNo:res,sid}));
+    localStorage.setItem(lsKey(),JSON.stringify({regId:regRef.id,queueNo:res,sid,name,surname}));
+    myProfile={name,surname};
     savedRegId=regRef.id;subDayRegs();show("vTicket");toast(t("okReg"));
-  }catch(e){done=true;clearTimeout(guard);err.textContent=t("errNet")+" ("+(e.code||e.message||"")+")";btn.disabled=false}
+  }catch(e){
+    done=true;clearTimeout(guard);
+    if(e && e.message==="DUP"){
+      err.textContent=t("errDup");toast(t("errDup"));btn.disabled=false;return;
+    }
+    err.textContent=t("errNet")+" ("+(e.code||e.message||"")+")";btn.disabled=false;
+  }
 }
 
 function attachReg(){/* eski usul olib tashlandi — subDayRegs ishlatiladi */}
@@ -499,7 +514,7 @@ function renderTicket(){
   const myPos = idx<0 ? (myReg.queueNo||"—") : (idx+1);
   document.getElementById("tNum").textContent=myPos;
   document.getElementById("tSid").textContent=myReg.sid||"—";
-  document.getElementById("tName").textContent=(myReg.name||"")+" "+(myReg.surname||"");
+  document.getElementById("tName").textContent=((myProfile&&myProfile.name)||"")+" "+((myProfile&&myProfile.surname)||"");
   document.getElementById("tWeekDate").textContent = cfg&&cfg.examDate ? new Date(cfg.examDate+"T00:00:00").toLocaleDateString(lang==="uz"?"uz-UZ":"ru-RU") : "";
   // oldimda turgan (hali kirmagan) odamlar
   const aheadCount = idx<0?0: serve.slice(0,idx).filter(r=>r.status==="waiting"||r.status==="called").length;
@@ -534,8 +549,9 @@ function renderTicket(){
 async function leaveQueue(){
   if(!myReg)return;
   if(!confirm(t("leaveConfirm")))return;
-  try{await db.collection("registrations").doc(myReg.id).update({status:"left",leftAt:new Date().toISOString()});}catch(e){}
-  localStorage.removeItem(lsKey());savedRegId=null;if(regsUnsub)regsUnsub();myReg=null;
+  await authReady;
+  try{await db.collection("queue").doc(myReg.id).update({status:"left",leftAt:new Date().toISOString()});}catch(e){}
+  localStorage.removeItem(lsKey());savedRegId=null;myProfile=null;if(regsUnsub)regsUnsub();myReg=null;
   toast(t("leftTxt"));route();
 }
 

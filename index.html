@@ -14,6 +14,7 @@
 <title>🕌 Attanal Al Arabic</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -145,7 +146,7 @@ input::placeholder,textarea::placeholder{color:#4b5563}
         <input id="dpLimit" placeholder="Limit" type="number" value="50" style="width:80px" />
       </div>
       <div class="fl">Rol</div>
-      <select id="dpRole" style="margin-bottom:7px"><option value="device">Qurilma (o'quvchi qo'shadi)</option><option value="proktor">Proktor (imtihon nazorati)</option><option value="kuzatuvchi">Kuzatuvchi (faqat ko'radi)</option></select>
+      <select id="dpRole" style="margin-bottom:7px"><option value="device">Qurilma (o'quvchi qo'shadi)</option><option value="proktor">Proktor (imtihon nazorati)</option><option value="kuzatuvchi">Kuzatuvchi (faqat ko'radi)</option><option value="viewer">Ko'ruvchi (faqat ko'radi, tashqi)</option></select>
       <button class="mbtn pri" onclick="addDevice()">+ Login qo'shish</button>
     </div>
     <div id="devList" style="margin-top:8px"></div>
@@ -385,10 +386,9 @@ input::placeholder,textarea::placeholder{color:#4b5563}
 <!-- ADMIN LOGIN+PASSWORD -->
 <div class="ov" id="ovAdminPw">
   <div class="modal">
-    <h2>🔐 Admin login va parol</h2>
-    <div class="fl">Admin login</div>
-    <input id="newAdminLogin" placeholder="Login..." autocomplete="off" />
-    <div class="fl" style="margin-top:8px">Yangi parol</div>
+    <h2>🔐 Parolni almashtirish</h2>
+    <p style="color:#6b7280;font-size:12px;text-align:center;margin-bottom:12px">O'zingizning kirish parolingizni yangilaysiz. Login o'zgarmaydi.</p>
+    <div class="fl">Yangi parol</div>
     <div class="pwrap"><input id="newAdminPw" type="password" placeholder="Yangi parol..." /><button type="button" class="eye" onclick="togPw('newAdminPw',this)">👁</button></div>
     <div class="fl" style="margin-top:8px">Parolni takrorlang</div>
     <div class="pwrap"><input id="newAdminPw2" type="password" placeholder="Yana bir bor..." /><button type="button" class="eye" onclick="togPw('newAdminPw2',this)">👁</button></div>
@@ -397,26 +397,11 @@ input::placeholder,textarea::placeholder{color:#4b5563}
   </div>
 </div>
 
-<!-- VIEWER LINK (admin) -->
-<div class="ov" id="ovViewer">
-  <div class="modal">
-    <h2>👁 Ko'rish havolasi</h2>
-    <p style="color:#6b7280;font-size:12px;text-align:center;margin-bottom:12px">Bu havolani olgan odam faqat <b style="color:#38bdf8">ko'ra oladi</b>.</p>
-    <div class="fl">Ko'ruvchi paroli</div>
-    <div style="display:flex;gap:7px"><input id="viewerPw" placeholder="Parol..." style="flex:1" /><button class="mbtn pri" style="width:auto;margin:0;padding:11px 16px" onclick="saveViewerPw()">Saqlash</button></div>
-    <div class="box" style="margin-top:12px">
-      <div class="fl">Ulashish havolasi</div>
-      <div id="viewerLink" style="word-break:break-all;font-size:12px;color:#38bdf8;margin-bottom:8px"></div>
-      <button class="mbtn pri" onclick="copyViewerLink()">📋 Havolani nusxalash</button>
-    </div>
-    <button class="mbtn sec" onclick="hide('ovViewer')" style="margin-top:8px">Yopish</button>
-  </div>
-</div>
-
 <!-- TELEGRAM (admin) -->
 <div class="ov" id="ovTg">
   <div class="modal">
     <h2>📲 Telegram bildirishnoma</h2>
+    <p style="color:#6b7280;font-size:12px;text-align:center;margin-bottom:12px">Bot token endi faqat xodimlarga ko'rinadi (butun internetga emas) — Firestore qoidalari bilan himoyalangan.</p>
     <div class="fl">Bot token</div>
     <input id="tgToken" placeholder="123456:ABC..." style="margin-bottom:8px" />
     <div class="fl">Chat ID</div>
@@ -467,7 +452,6 @@ input::placeholder,textarea::placeholder{color:#4b5563}
   <button class="dItem adminOnly" onclick="navTo('ovQueue')" style="display:none"><span class="di">🎫</span> Navbat / Ro'yxat</button>
   <button class="dItem adminOnly" onclick="navTo('ovDev')" style="display:none"><span class="di">🔑</span> Loginlar</button>
   <button class="dItem adminOnly" onclick="navTo('ovRate')" style="display:none"><span class="di">💵</span> Dollar kursi</button>
-  <button class="dItem adminOnly" onclick="navTo('ovViewer')" style="display:none"><span class="di">👁</span> Ko'rish havolasi</button>
   <button class="dItem adminOnly" onclick="navTo('ovAdminPw')" style="display:none"><span class="di">🔐</span> Admin login/parol</button>
   <button class="dItem adminOnly" onclick="navTo('ovTg')" style="display:none"><span class="di">📲</span> Telegram xabar</button>
   <button class="dItem adminOnly" onclick="navTo('ovSettings')" style="display:none"><span class="di">⚙️</span> Narx & navbat sozlamalari</button>
@@ -537,11 +521,10 @@ const fbConfig = {
 };
 firebase.initializeApp(fbConfig);
 const db = firebase.firestore();
+// Secondary app instance used only to create new staff Auth accounts
+// (addDevice) without signing the currently logged-in admin out.
+const secondaryApp = firebase.initializeApp(fbConfig, "Secondary");
 
-const DEFAULT_ADMIN_LOGIN = "admin";
-const DEFAULT_ADMIN_PW = "221205AaA";
-const BACKUP_PASSWORD = "20077002";
-const DEFAULT_VIEWER = "attanal2026";
 let BASE_PRICE = 1450000;
 
 const CATS = [
@@ -558,7 +541,7 @@ const PTS = ["Naqd","Karta","Dollar"];
 let user=null, weeks=[], curWid=null, students=[], unsubStudents=null;
 let selCat="oddiy", selPay="Naqd", selSettle=null;
 let eCat="oddiy", ePay="Naqd", eId=null, eSettle=null, eVoucherCur="";
-let fStatus="Barchasi", activityItems=[], shownDevPw={}, accScopeVal="cur", allWeeksCache=null;
+let fStatus="Barchasi", activityItems=[], accScopeVal="cur", allWeeksCache=null;
 let todayRate=0, vchTabVal="free";
 
 function show(id){document.getElementById(id).classList.add("show")}
@@ -576,39 +559,113 @@ function fuzzyHit(query,fields){const nq=norm(query);if(!nq)return true;const ca
 
 function openDrawer(){document.getElementById("drawer").classList.add("open");document.getElementById("drawerBg").classList.add("open")}
 function closeDrawer(){document.getElementById("drawer").classList.remove("open");document.getElementById("drawerBg").classList.remove("open")}
-function navTo(id){closeDrawer();if(id==="ovArch")renderArchive();if(id==="ovAcc"){accScopeVal="cur";accScope("cur")}if(id==="ovDev")loadDevList();if(id==="ovNotif"){openNotif();return}if(id==="ovPending")showPending();if(id==="ovExamReq")showExamReq();if(id==="ovViewer")openViewer();if(id==="ovTg")openTg();if(id==="ovAdminPw")openAdminPw();if(id==="ovRate")openRate();if(id==="ovVouch"){vchTabVal="free";loadVouchers()}if(id==="ovQueue")openQueue();if(id==="ovSettings")openSettings();if(id==="ovSearch"){document.getElementById("gsResult").innerHTML="";document.getElementById("gsInput").value=""}show(id)}
+function navTo(id){closeDrawer();if(id==="ovArch")renderArchive();if(id==="ovAcc"){accScopeVal="cur";accScope("cur")}if(id==="ovDev")loadDevList();if(id==="ovNotif"){openNotif();return}if(id==="ovPending")showPending();if(id==="ovExamReq")showExamReq();if(id==="ovTg")openTg();if(id==="ovAdminPw")openAdminPw();if(id==="ovRate")openRate();if(id==="ovVouch"){vchTabVal="free";loadVouchers()}if(id==="ovQueue")openQueue();if(id==="ovSettings")openSettings();if(id==="ovSearch"){document.getElementById("gsResult").innerHTML="";document.getElementById("gsInput").value=""}show(id)}
 
 // ── AUTH ──────────────────────────────────────────────────────
-async function getAdmin(){let a={login:DEFAULT_ADMIN_LOGIN,password:DEFAULT_ADMIN_PW};try{const d=await db.collection("config").doc("admin").get();if(d.exists){const x=d.data();a={login:x.login||DEFAULT_ADMIN_LOGIN,password:x.password||DEFAULT_ADMIN_PW}}}catch(e){}return a}
-async function getViewerPw(){let p=DEFAULT_VIEWER;try{const a=await db.collection("config").doc("viewer").get();if(a.exists&&a.data().password)p=a.data().password}catch(e){}return p}
-function loginAs(u){user=u;localStorage.setItem("aaUser",JSON.stringify(u));hide("ovLogin");startApp()}
+// Everyone - admin/device/proktor/kuzatuvchi/viewer - signs in with
+// Firebase Auth email+password (login -> login@attanal.local). Viewer is
+// just another staff/{uid} role now (created the same way as device/
+// proktor via addDevice), not a shared password - no Cloud Functions
+// involved anywhere in login (this project stays on the Spark plan).
+// Session state lives entirely in Firebase Auth from here on (see
+// onAuthStateChanged below) - never in localStorage.
 async function doLogin(){
-  const login=document.getElementById("inLogin").value.trim();
-  const code=document.getElementById("inCode").value.trim();
-  if(!code){toast("Parol kiriting!","#ef4444");return}
-  if(code===BACKUP_PASSWORD){loginAs({id:"admin",isAdmin:true,role:"admin",limit:99999,used:0,name:"Admin"});return}
-  let adm;try{adm=await getAdmin()}catch(e){toast("Internet muammosi!","#ef4444");return}
-  if(login===adm.login && code===adm.password){loginAs({id:"admin",isAdmin:true,role:"admin",limit:99999,used:0,name:"Admin"});return}
-  const vpw=await getViewerPw();
-  if(code===vpw){loginAs({id:"viewer",isAdmin:false,role:"viewer",name:"Ko'ruvchi"});return}
+  const login=document.getElementById("inLogin").value.trim().toLowerCase();
+  const code=document.getElementById("inCode").value;
+  if(!login||!code){toast("Login va parol kiriting!","#ef4444");return}
   try{
-    const snap=await db.collection("devicePasswords").get();let matched=null;
-    snap.forEach(d=>{const x=d.data();if((x.label||"")===login && x.password===code)matched={id:d.id,...x}});
-    if(matched){
-      const role=matched.role==="proktor"?"proktor":(matched.role==="kuzatuvchi"?"kuzatuvchi":"device");
-      user={id:matched.id,isAdmin:false,role,col:"devicePasswords",name:matched.label,limit:matched.limit||50,used:matched.used||0};
-      localStorage.setItem("aaUser",JSON.stringify(user));
-      logActivity("login","🔓 "+user.name+" ("+role+") tizimga kirdi",user.name);
-      hide("ovLogin");startApp();return;
+    await firebase.auth().signInWithEmailAndPassword(login+"@attanal.local",code);
+    // onAuthStateChanged takes over from here
+  }catch(e){
+    if(!["auth/user-not-found","auth/wrong-password","auth/invalid-credential","auth/invalid-email"].includes(e.code)){
+      toast("Internet muammosi!","#ef4444");return;
     }
-  }catch(e){toast("Internet muammosi!","#ef4444");return}
-  toast("Login yoki parol noto'g'ri!","#ef4444");
+    toast("Login yoki parol noto'g'ri!","#ef4444");
+  }
 }
-function logout(){localStorage.removeItem("aaUser");location.href=location.pathname}
+function logout(){firebase.auth().signOut();location.href=location.pathname}
+firebase.auth().onAuthStateChanged(async (fbUser)=>{
+  if(!fbUser){
+    user=null;
+    document.getElementById("loader").style.display="none";
+    document.getElementById("hdr").style.display="none";
+    document.getElementById("mainC").style.display="none";
+    show("ovLogin");
+    return;
+  }
+  document.getElementById("loader").style.display="flex";
+  let staffSnap;
+  try{staffSnap=await db.collection("staff").doc(fbUser.uid).get()}catch(e){
+    document.getElementById("loader").style.display="none";
+    toast("Internet muammosi!","#ef4444");return;
+  }
+  if(!staffSnap.exists){
+    await firebase.auth().signOut();
+    document.getElementById("loader").style.display="none";
+    toast("Sizga hali rol berilmagan. Admin bilan bog'laning.","#ef4444");
+    show("ovLogin");return;
+  }
+  const s=staffSnap.data();
+  user={id:fbUser.uid,isAdmin:s.role==="admin",role:s.role,name:s.name||s.login||fbUser.uid,limit:s.limit,used:s.used};
+  hide("ovLogin");
+  if(s.role==="device"||s.role==="proktor"||s.role==="kuzatuvchi"){
+    logActivity("login","🔓 "+user.name+" ("+user.role+") tizimga kirdi",user.name);
+  }
+  startApp();
+});
 
-// ── ACTIVITY ──────────────────────────────────────────────────
-async function logActivity(type,text,device){try{await db.collection("activity").add({type,text,device:device||"",createdAt:new Date().toISOString(),read:false})}catch(e){}notifyTelegram(text)}
+// ── ACTIVITY / TELEGRAM ───────────────────────────────────────
+// No Cloud Functions on this project (Spark plan) - Telegram is sent
+// directly from whichever staff browser performs the action, same as
+// before the security migration. config/telegram (including botToken) is
+// staff-read/admin-write only now (see firestore.rules), not world-
+// readable like it used to be - that's the mitigation available without
+// Blaze. Every staff action that should notify Telegram goes through
+// logActivity(), which writes the audit-trail doc AND sends the message
+// in the same call, from the acting staff member's own browser.
 async function notifyTelegram(text){try{const t=await db.collection("config").doc("telegram").get();if(!t.exists)return;const c=t.data();if(!c.enabled||!c.botToken||!c.chatId)return;fetch("https://api.telegram.org/bot"+c.botToken+"/sendMessage",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({chat_id:c.chatId,text:"🕌 Attanal Al Arabic\n"+text})}).catch(()=>{})}catch(e){}}
+async function logActivity(type,text,device){try{await db.collection("activity").add({type,text,device:device||"",createdAt:new Date().toISOString(),read:false})}catch(e){}notifyTelegram(text)}
+
+// A student registering themselves on talaba.html has no Telegram access
+// (anonymous, no bot token exposure by design) - so the notification for
+// "new self-registration" has to come from a staff browser instead. If
+// several staff have the admin panel open at once, only ONE must send it:
+// each candidate browser tries to atomically "claim" the queue doc via a
+// transaction (set telegramNotified:true only if not already set); losing
+// that race means someone else is already sending it. Started once after
+// login (see startApp()). Limitation: if no staff browser is open at all
+// when someone registers, no notification goes out for that registration
+// (there is no always-on server component without Cloud Functions).
+let newRegListenerStarted=false;
+function listenNewRegistrations(){
+  if(newRegListenerStarted)return;newRegListenerStarted=true;
+  let firstSnap=true;
+  db.collection("queue").where("day","==",todayStr()).onSnapshot(snap=>{
+    if(firstSnap){firstSnap=false;return}
+    snap.docChanges().forEach(change=>{
+      if(change.type!=="added")return;
+      const q=change.doc.data();
+      if(q.status!=="waiting")return;
+      claimAndNotifyNewReg(change.doc.id,q);
+    });
+  },()=>{});
+}
+async function claimAndNotifyNewReg(id,q){
+  const ref=db.collection("queue").doc(id);
+  let claimed=false;
+  try{
+    await db.runTransaction(async tx=>{
+      const snap=await tx.get(ref);
+      if(!snap.exists||snap.data().telegramNotified)return;
+      tx.update(ref,{telegramNotified:true});
+      claimed=true;
+    });
+  }catch(e){return}
+  if(!claimed)return;
+  let reg={};
+  try{const rd=await db.collection("registrations").doc(id).get();reg=rd.exists?rd.data():{}}catch(e){}
+  notifyTelegram("🆕 Yangi ro'yxat: №"+(q.queueNo||"?")+" — "+(reg.name||"")+" "+(reg.surname||""));
+}
 function listenActivity(){db.collection("activity").orderBy("createdAt","desc").limit(60).onSnapshot(snap=>{activityItems=[];let unread=0;snap.forEach(d=>{const a={id:d.id,...d.data()};activityItems.push(a);if(!a.read)unread++});const bb=document.getElementById("bellBadge"),dd=document.getElementById("drawerBadge");if(unread>0){bb.style.display="inline-block";bb.textContent=unread;dd.style.display="inline-block";dd.textContent=unread}else{bb.style.display="none";dd.style.display="none"}if(document.getElementById("ovNotif").classList.contains("show"))renderNotif()})}
 function openNotif(){closeDrawer();show("ovNotif");renderNotif();markNotifRead()}
 function renderNotif(){const el=document.getElementById("notifList");if(!activityItems.length){el.innerHTML='<div class="empty">Hozircha hech narsa yo\'q</div>';return}el.innerHTML=activityItems.map(a=>`<div class="pr"><div><div style="font-size:13px;color:#fff;font-weight:600">${esc(a.text)}</div><div style="font-size:11px;color:#6b7280">${a.createdAt?new Date(a.createdAt).toLocaleString("uz-UZ"):""}</div></div>${a.read?"":'<span class="pill" style="background:#ef444422;color:#ef4444">yangi</span>'}</div>`).join("")}
@@ -633,7 +690,7 @@ async function startApp(){
   }else{
     document.querySelectorAll(".adminOnly").forEach(e=>e.style.display="none");
   }
-  renderAll(); subStudents();
+  renderAll(); subStudents(); listenNewRegistrations();
 }
 
 // ── RATE ──────────────────────────────────────────────────────
@@ -672,54 +729,82 @@ function renderArchive(){
   el.innerHTML=weeks.map(w=>{const cur=w.id===curWid;const dt=w.createdAt?new Date(w.createdAt).toLocaleDateString("uz-UZ"):"";return `<div class="wkrow${cur?' cur':''}"><div style="min-width:0"><div style="font-weight:700;color:#fff;font-size:14px">${esc(w.label)} ${cur?'<span class="pill" style="background:#6366f122;color:#6366f1">joriy</span>':''}</div><div style="font-size:11px;color:#6b7280">${dt}</div></div><div style="display:flex;gap:6px;flex-shrink:0"><button onclick="switchWeek('${w.id}')" style="padding:6px 11px;border-radius:8px;border:1px solid #6366f1;background:transparent;color:#6366f1;font-size:12px;cursor:pointer;font-weight:700">Ko'rish</button>${user.isAdmin?`<button onclick="deleteWeek('${w.id}')" style="padding:6px 9px;border-radius:8px;border:1px solid #ef4444;background:transparent;color:#ef4444;font-size:12px;cursor:pointer">🗑</button>`:''}</div></div>`}).join("");
 }
 
-// ── ADMIN LOGIN/PASSWORD ──────────────────────────────────────
-async function openAdminPw(){const a=await getAdmin();document.getElementById("newAdminLogin").value=a.login;document.getElementById("newAdminPw").value="";document.getElementById("newAdminPw2").value=""}
-async function saveAdminPw(){const login=document.getElementById("newAdminLogin").value.trim();const a=document.getElementById("newAdminPw").value.trim();const b=document.getElementById("newAdminPw2").value.trim();if(!login){toast("Login kiriting","#ef4444");return}if(!a){toast("Parol kiriting","#ef4444");return}if(a!==b){toast("Parollar mos emas!","#ef4444");return}if(a.length<4){toast("Parol kamida 4 ta belgi","#ef4444");return}await db.collection("config").doc("admin").set({login,password:a,updatedAt:new Date().toISOString()});toast("Admin login va parol o'zgartirildi ✓");hide("ovAdminPw")}
+// ── ADMIN PASSWORD ────────────────────────────────────────────
+// Admin accounts are Firebase Auth users now - this changes the
+// currently-signed-in admin's own password, not a Firestore doc.
+function openAdminPw(){document.getElementById("newAdminPw").value="";document.getElementById("newAdminPw2").value=""}
+async function saveAdminPw(){
+  const a=document.getElementById("newAdminPw").value;
+  const b=document.getElementById("newAdminPw2").value;
+  if(!a){toast("Parol kiriting","#ef4444");return}
+  if(a!==b){toast("Parollar mos emas!","#ef4444");return}
+  if(a.length<6){toast("Parol kamida 6 ta belgi","#ef4444");return}
+  try{
+    await firebase.auth().currentUser.updatePassword(a);
+    toast("Parol o'zgartirildi ✓");hide("ovAdminPw");
+  }catch(e){
+    if(e.code==="auth/requires-recent-login"){toast("Xavfsizlik uchun chiqib, qayta kiring va yana urinib ko'ring","#ef4444")}
+    else{toast("Xato: "+(e.message||e.code),"#ef4444")}
+  }
+}
 
-// ── VIEWER LINK ───────────────────────────────────────────────
-async function openViewer(){const pw=await getViewerPw();document.getElementById("viewerPw").value=pw;renderViewerLink(pw)}
-function renderViewerLink(pw){document.getElementById("viewerLink").textContent=location.origin+location.pathname+"?v="+encodeURIComponent(pw)}
-async function saveViewerPw(){const pw=document.getElementById("viewerPw").value.trim();if(!pw){toast("Parol kiriting","#ef4444");return}await db.collection("config").doc("viewer").set({password:pw,updatedAt:new Date().toISOString()});renderViewerLink(pw);toast("Saqlandi ✓")}
-function copyViewerLink(){const t=document.getElementById("viewerLink").textContent;navigator.clipboard.writeText(t).then(()=>toast("Havola nusxalandi 📋")).catch(()=>toast("Nusxalab bo'lmadi","#ef4444"))}
+// Viewer is now a normal staff/{uid} account (role "viewer"), created via
+// addDevice() exactly like device/proktor/kuzatuvchi - no separate
+// password flow needed any more.
 
 // ── TELEGRAM ──────────────────────────────────────────────────
+// Bot token/chat id live only in Functions secrets now (see functions/),
+// never in Firestore - this modal only toggles delivery on/off.
 async function openTg(){try{const t=await db.collection("config").doc("telegram").get();if(t.exists){const c=t.data();document.getElementById("tgToken").value=c.botToken||"";document.getElementById("tgChat").value=c.chatId||"";document.getElementById("tgEnabled").checked=!!c.enabled}}catch(e){}}
 async function saveTg(){const botToken=document.getElementById("tgToken").value.trim();const chatId=document.getElementById("tgChat").value.trim();const enabled=document.getElementById("tgEnabled").checked;await db.collection("config").doc("telegram").set({botToken,chatId,enabled,updatedAt:new Date().toISOString()});toast("Saqlandi ✓")}
 async function testTg(){await saveTg();await notifyTelegram("✅ Sinov xabari — ishlayapti!");toast("Sinov xabari yuborildi")}
 
-// ── DEVICE LOGINS ─────────────────────────────────────────────
+// ── STAFF LOGINS ──────────────────────────────────────────────
+// Passwords live only in Firebase Auth now - there is nothing to display
+// or toggle-show here any more (that control only ever existed because
+// storage used to be plaintext, which was the vulnerability).
 async function loadDevList(){
   const el=document.getElementById("devList");el.innerHTML='<div style="color:#6b7280;text-align:center;padding:10px">Yuklanmoqda...</div>';
-  const snap=await db.collection("devicePasswords").orderBy("createdAt","desc").get();let rows="";
-  snap.forEach(d=>{const p=d.data();const sh=shownDevPw[d.id];const role=p.role||"device";
-    const rl=role==="proktor"?'<span class="pill" style="background:#f59e0b22;color:#f59e0b">📝 Proktor</span>':(role==="kuzatuvchi"?'<span class="pill" style="background:#38bdf822;color:#38bdf8">👁 Kuzatuvchi</span>':'<span class="pill" style="background:#6366f122;color:#6366f1">Qurilma</span>');
+  const snap=await db.collection("staff").get();
+  const list=[];
+  snap.forEach(d=>{const p=d.data();if(p.role==="device"||p.role==="proktor"||p.role==="kuzatuvchi"||p.role==="viewer")list.push({id:d.id,...p})});
+  list.sort((a,b)=>{const ta=a.createdAt&&a.createdAt.toMillis?a.createdAt.toMillis():0;const tb=b.createdAt&&b.createdAt.toMillis?b.createdAt.toMillis():0;return tb-ta});
+  let rows="";
+  list.forEach(p=>{const role=p.role||"device";
+    const rl=role==="proktor"?'<span class="pill" style="background:#f59e0b22;color:#f59e0b">📝 Proktor</span>':(role==="kuzatuvchi"?'<span class="pill" style="background:#38bdf822;color:#38bdf8">👁 Kuzatuvchi</span>':(role==="viewer"?'<span class="pill" style="background:#38bdf822;color:#38bdf8">👁 Ko\'ruvchi</span>':'<span class="pill" style="background:#6366f122;color:#6366f1">Qurilma</span>'));
     const meta=role==="device"?("Limit: "+p.limit+" | Ishlatgan: "+(p.used||0)):(role==="proktor"?"Imtihon nazorati":"Faqat ko'radi");
-    rows+=`<div class="pr"><div style="min-width:0"><div style="font-weight:700;color:#fff;font-size:13px">👤 ${esc(p.label||d.id)} ${rl}</div><div style="font-size:12px;color:#9ca3af">Parol: <b style="color:#f59e0b">${sh?esc(p.password):"••••••"}</b> <button onclick="togDevPw('${d.id}')" style="border:none;background:transparent;cursor:pointer;font-size:13px">${sh?"🙈":"👁"}</button></div><div style="font-size:11px;color:#6b7280">${meta}</div></div><div style="display:flex;gap:5px;flex-shrink:0">${role==="device"?`<button onclick="editDevLimit('${d.id}',${p.limit})" style="padding:4px 8px;border-radius:7px;border:1px solid #6366f1;background:transparent;color:#6366f1;font-size:11px;cursor:pointer">✏️</button><button onclick="resetDev('${d.id}')" style="padding:4px 8px;border-radius:7px;border:1px solid #f59e0b;background:transparent;color:#f59e0b;font-size:11px;cursor:pointer">↺</button>`:''}<button onclick="delDev('${d.id}')" style="padding:4px 8px;border-radius:7px;border:1px solid #ef4444;background:transparent;color:#ef4444;font-size:11px;cursor:pointer">🗑</button></div></div>`});
+    rows+=`<div class="pr"><div style="min-width:0"><div style="font-weight:700;color:#fff;font-size:13px">👤 ${esc(p.login||p.name||p.id)} ${rl}</div><div style="font-size:11px;color:#6b7280">${meta}</div></div><div style="display:flex;gap:5px;flex-shrink:0">${role==="device"?`<button onclick="editDevLimit('${p.id}',${p.limit||0})" style="padding:4px 8px;border-radius:7px;border:1px solid #6366f1;background:transparent;color:#6366f1;font-size:11px;cursor:pointer">✏️</button><button onclick="resetDev('${p.id}')" style="padding:4px 8px;border-radius:7px;border:1px solid #f59e0b;background:transparent;color:#f59e0b;font-size:11px;cursor:pointer">↺</button>`:''}<button onclick="delDev('${p.id}')" style="padding:4px 8px;border-radius:7px;border:1px solid #ef4444;background:transparent;color:#ef4444;font-size:11px;cursor:pointer">🗑</button></div></div>`});
   el.innerHTML=`<div class="box">${rows||'<div style="color:#6b7280;text-align:center;padding:10px">Hali login yo\'q</div>'}</div>`;
 }
-function togDevPw(id){shownDevPw[id]=!shownDevPw[id];loadDevList()}
 async function addDevice(){
-  const label=document.getElementById("dpName").value.trim();
-  const password=document.getElementById("dpPass").value.trim();
+  const label=document.getElementById("dpName").value.trim().toLowerCase();
+  const password=document.getElementById("dpPass").value;
   const role=document.getElementById("dpRole").value;
   const limit=role==="device"?(parseInt(document.getElementById("dpLimit").value)||50):99999;
   if(!label||!password){toast("Login va parol kiriting!","#ef4444");return}
-  const snap=await db.collection("devicePasswords").get();let dup=false;snap.forEach(d=>{if((d.data().label||"")===label)dup=true});
-  if(dup){toast("Bu login band","#ef4444");return}
-  await db.collection("devicePasswords").doc(gid()).set({label,password,role,limit,used:0,createdAt:new Date().toISOString()});
-  document.getElementById("dpName").value="";document.getElementById("dpPass").value="";
-  toast("Login qo'shildi: "+label);loadDevList();
+  if(password.length<6){toast("Parol kamida 6 ta belgi bo'lsin","#ef4444");return}
+  const dupSnap=await db.collection("staff").where("login","==",label).limit(1).get();
+  if(!dupSnap.empty){toast("Bu login band","#ef4444");return}
+  try{
+    const cred=await secondaryApp.auth().createUserWithEmailAndPassword(label+"@attanal.local",password);
+    await secondaryApp.auth().signOut();
+    await db.collection("staff").doc(cred.user.uid).set({login:label,name:label,role,limit,used:0,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    document.getElementById("dpName").value="";document.getElementById("dpPass").value="";
+    toast("Login qo'shildi: "+label);loadDevList();
+  }catch(e){
+    toast("Xato: "+(e.code==="auth/email-already-in-use"?"Bu login band":(e.message||e.code)),"#ef4444");
+  }
 }
-async function editDevLimit(id,cur){const nv=prompt("Yangi limit:",cur);if(nv&&!isNaN(nv)){await db.collection("devicePasswords").doc(id).update({limit:parseInt(nv)});toast("Yangilandi");loadDevList()}}
-async function resetDev(id){if(!confirm("Ishlatgan sonini 0 ga tushirasizmi?"))return;await db.collection("devicePasswords").doc(id).update({used:0});toast("Tozalandi");loadDevList()}
-async function delDev(id){if(!confirm("Bu loginni o'chirasizmi?"))return;await db.collection("devicePasswords").doc(id).delete();toast("O'chirildi","#f59e0b");loadDevList()}
+async function editDevLimit(id,cur){const nv=prompt("Yangi limit:",cur);if(nv&&!isNaN(nv)){await db.collection("staff").doc(id).update({limit:parseInt(nv)});toast("Yangilandi");loadDevList()}}
+async function resetDev(id){if(!confirm("Ishlatgan sonini 0 ga tushirasizmi?"))return;await db.collection("staff").doc(id).update({used:0});toast("Tozalandi");loadDevList()}
+async function delDev(id){if(!confirm("Bu loginni o'chirasizmi? (Faqat ruxsat bekor bo'ladi — Auth hisobi alohida o'chirilishi kerak bo'lishi mumkin)"))return;await db.collection("staff").doc(id).delete();toast("O'chirildi","#f59e0b");loadDevList()}
 
 // ── LIMIT REQUESTS ────────────────────────────────────────────
 function listenRequests(){db.collection("permRequests").where("status","==","pending").onSnapshot(snap=>{const n=snap.size;const rb=document.getElementById("reqBadge");if(n>0){rb.style.display="inline-block";rb.textContent=n}else{rb.style.display="none"}})}
-function showPending(){show("ovPending");db.collection("permRequests").where("status","==","pending").get().then(snap=>{let html="";snap.forEach(d=>{const r=d.data();html+=`<div class="pr"><div><div style="font-weight:700;color:#fff;font-size:13px">${esc(r.deviceName||r.deviceId)}</div><div style="font-size:11px;color:#6b7280">Limit: ${r.currentLimit}</div></div><div style="display:flex;gap:6px"><button onclick="approveReq('${d.id}','${r.deviceId}',${r.currentLimit},'${r.col||"devicePasswords"}')" style="padding:5px 10px;border-radius:7px;border:1px solid #22c55e;background:transparent;color:#22c55e;font-size:11px;cursor:pointer">✓</button><button onclick="rejectReq('${d.id}')" style="padding:5px 10px;border-radius:7px;border:1px solid #ef4444;background:transparent;color:#ef4444;font-size:11px;cursor:pointer">✗</button></div></div>`});document.getElementById("pendingList").innerHTML=html||'<div style="color:#6b7280;text-align:center;padding:20px">So\'rov yo\'q</div>'})}
-async function approveReq(reqId,devId,cur,col){const add=parseInt(prompt("Nechta qo'shimcha?","20"))||20;await db.collection(col||"devicePasswords").doc(devId).update({limit:cur+add});await db.collection("permRequests").doc(reqId).update({status:"approved"});toast("Ruxsat: +"+add);showPending()}
+function showPending(){show("ovPending");db.collection("permRequests").where("status","==","pending").get().then(snap=>{let html="";snap.forEach(d=>{const r=d.data();html+=`<div class="pr"><div><div style="font-weight:700;color:#fff;font-size:13px">${esc(r.deviceName||r.deviceId)}</div><div style="font-size:11px;color:#6b7280">Limit: ${r.currentLimit}</div></div><div style="display:flex;gap:6px"><button onclick="approveReq('${d.id}','${r.deviceId}',${r.currentLimit})" style="padding:5px 10px;border-radius:7px;border:1px solid #22c55e;background:transparent;color:#22c55e;font-size:11px;cursor:pointer">✓</button><button onclick="rejectReq('${d.id}')" style="padding:5px 10px;border-radius:7px;border:1px solid #ef4444;background:transparent;color:#ef4444;font-size:11px;cursor:pointer">✗</button></div></div>`});document.getElementById("pendingList").innerHTML=html||'<div style="color:#6b7280;text-align:center;padding:20px">So\'rov yo\'q</div>'})}
+async function approveReq(reqId,devId,cur){const add=parseInt(prompt("Nechta qo'shimcha?","20"))||20;await db.collection("staff").doc(devId).update({limit:cur+add});await db.collection("permRequests").doc(reqId).update({status:"approved"});toast("Ruxsat: +"+add);showPending()}
 async function rejectReq(reqId){await db.collection("permRequests").doc(reqId).update({status:"rejected"});toast("Rad etildi","#f59e0b");showPending()}
-async function sendPermReq(){hide("ovReq");await db.collection("permRequests").add({deviceId:user.id,deviceName:user.name||user.id,col:user.col||"devicePasswords",currentLimit:user.limit,status:"pending",createdAt:new Date().toISOString()});toast("Adminga so'rov yuborildi ✓")}
+async function sendPermReq(){hide("ovReq");await db.collection("permRequests").add({deviceId:user.id,deviceName:user.name||user.id,currentLimit:user.limit,status:"pending",createdAt:new Date().toISOString()});toast("Adminga so'rov yuborildi ✓")}
 
 // ── EXAM PERMISSION REQUESTS ──────────────────────────────────
 function listenExamRequests(){db.collection("examRequests").where("status","==","pending").onSnapshot(snap=>{const n=snap.size;const eb=document.getElementById("examBadge");if(n>0){eb.style.display="inline-block";eb.textContent=n}else{eb.style.display="none"}if(document.getElementById("ovExamReq").classList.contains("show"))showExamReq()})}
@@ -898,11 +983,19 @@ async function openQueue(){
   document.getElementById("qTo").value=qCfg.toAt?new Date(qCfg.toAt).toTimeString().slice(0,5):"";
   subQueue();startQAuto();
 }
+let qRegCache={}; // id -> cached PII from registrations/{id} (staff-read only)
 function subQueue(){
   if(qUnsub)qUnsub();
   const day=document.getElementById("qDate").value||todayStr();
-  qUnsub=db.collection("registrations").where("day","==",day).onSnapshot(snap=>{
-    qRegs=[];snap.forEach(d=>qRegs.push({id:d.id,...d.data()}));
+  qUnsub=db.collection("queue").where("day","==",day).onSnapshot(async snap=>{
+    const rows=[];snap.forEach(d=>rows.push({id:d.id,...d.data()}));
+    const missing=rows.filter(r=>!qRegCache[r.id]).map(r=>r.id);
+    if(missing.length){
+      await Promise.all(missing.map(async id=>{
+        try{const rd=await db.collection("registrations").doc(id).get();qRegCache[id]=rd.exists?rd.data():{}}catch(e){qRegCache[id]={}}
+      }));
+    }
+    qRegs=rows.map(r=>Object.assign({},qRegCache[r.id]||{},r));
     qRegs.sort((a,b)=>(a.effectiveNo||a.queueNo||0)-(b.effectiveNo||b.queueNo||0));
     renderQueue();
   },e=>{});
@@ -927,31 +1020,31 @@ async function toggleReg(){
 async function callNext(){
   const next=qRegs.filter(r=>r.status==="waiting"||r.status==="missed").sort((a,b)=>(a.effectiveNo||0)-(b.effectiveNo||0))[0];
   if(!next){toast("Navbatda hech kim yo'q","#f59e0b");return}
-  await db.collection("registrations").doc(next.id).update({status:"called",calledAt:new Date().toISOString()});
+  await db.collection("queue").doc(next.id).update({status:"called",calledAt:new Date().toISOString()});
   const cfgU={nowServing:next.effectiveNo||next.queueNo,updatedAt:new Date().toISOString()};
   if(!qCfg.examStartedAt)cfgU.examStartedAt=new Date().toISOString();
   await db.collection("config").doc("queue").set(cfgU,{merge:true});
   qCfg=Object.assign(qCfg||{},cfgU);
-  notifyTelegram("🎫 Navbat №"+next.queueNo+" — "+(next.name||"")+" "+(next.surname||"")+"\nIltimos 5 daqiqa ichida kiring.");
+  logActivity("queue_call","🎫 Navbat №"+next.queueNo+" — "+(next.name||"")+" "+(next.surname||"")+"\nIltimos 5 daqiqa ichida kiring.",user.name);
   renderQueue();
 }
 async function markQDone(id){
   const r=qRegs.find(x=>x.id===id);if(!r)return;
-  await db.collection("registrations").doc(id).update({status:"done",doneAt:new Date().toISOString()});
+  await db.collection("queue").doc(id).update({status:"done",doneAt:new Date().toISOString()});
   const done=qRegs.filter(x=>x.status==="done").length+1;
   if(qCfg&&qCfg.examStartedAt){const mins=(Date.now()-Date.parse(qCfg.examStartedAt))/60000;const avg=Math.max(1,Math.round(mins/Math.max(1,done)));await db.collection("config").doc("queue").set({avgMinutes:avg,servedCount:done,updatedAt:new Date().toISOString()},{merge:true});qCfg.avgMinutes=avg}
 }
 async function markQMissed(id){
   const r=qRegs.find(x=>x.id===id);if(!r)return;
   const maxEff=Math.max(0,...qRegs.map(x=>x.effectiveNo||x.queueNo||0));
-  await db.collection("registrations").doc(id).update({status:"missed",effectiveNo:maxEff+1,missedAt:new Date().toISOString()});
-  notifyTelegram("⛔ Navbat №"+r.queueNo+" — "+(r.name||"")+" kelmadi, oxiriga o'tkazildi.");
+  await db.collection("queue").doc(id).update({status:"missed",effectiveNo:maxEff+1,missedAt:new Date().toISOString()});
+  logActivity("queue_missed","⛔ Navbat №"+r.queueNo+" — "+(r.name||"")+" kelmadi, oxiriga o'tkazildi.",user.name);
 }
 async function sendQueueNotice(){
   const txt=prompt("Bildirishnoma matni (barcha kutayotganlarga va Telegramga):","Imtihon 15 daqiqadan so'ng boshlanadi.");
   if(!txt||!txt.trim())return;
   await db.collection("config").doc("queue").set({notice:{text:txt.trim(),at:new Date().toISOString()}},{merge:true});
-  notifyTelegram("📢 "+txt.trim());
+  logActivity("queue_notice","📢 "+txt.trim(),user.name);
   toast("Bildirishnoma yuborildi ✓");
 }
 function renderQueue(){
@@ -1008,8 +1101,8 @@ async function addStudent(){
   const {rate,dollar,som,price,total,rem}=calcPay();
   if(selPay==="Dollar"&&dollar>0&&!rate){toast("Dollar kursini kiriting!","#ef4444");return}
   if(!user.isAdmin){
-    const col=user.col||"devicePasswords";let pdata;
-    try{const pd=await db.collection(col).doc(user.id).get();pdata=pd.data()||{limit:user.limit,used:0}}catch(e){toast("Xato!","#ef4444");return}
+    let pdata;
+    try{const pd=await db.collection("staff").doc(user.id).get();pdata=pd.data()||{limit:user.limit,used:0}}catch(e){toast("Xato!","#ef4444");return}
     if((pdata.used||0)>=(pdata.limit||0)){document.getElementById("reqLim").textContent=pdata.limit||0;show("ovReq");return}
   }
   const catDisc = selCat!=="chegirma" ? Math.max(0, BASE_PRICE - price) : 0;
@@ -1026,8 +1119,8 @@ async function addStudent(){
     addedBy:user.id,addedByName:user.name,createdAt:new Date().toISOString()
   });
   const code = await assignVoucher(ref,name);
-  if(pendingImportRegId){try{await db.collection("registrations").doc(pendingImportRegId).update({imported:true,importedAt:new Date().toISOString()})}catch(e){}pendingImportRegId=null}
-  if(!user.isAdmin){await db.collection(user.col||"devicePasswords").doc(user.id).update({used:firebase.firestore.FieldValue.increment(1)});logActivity("add","➕ "+user.name+" o'quvchi qo'shdi: "+name+" (№"+examNo+", "+total.toLocaleString()+" so'm"+(debt>0?(", QARZ "+debt.toLocaleString()):"")+")",user.name)}
+  if(pendingImportRegId){try{await db.collection("queue").doc(pendingImportRegId).update({imported:true,importedAt:new Date().toISOString()})}catch(e){}pendingImportRegId=null}
+  if(!user.isAdmin){await db.collection("staff").doc(user.id).update({used:firebase.firestore.FieldValue.increment(1)});logActivity("add","➕ "+user.name+" o'quvchi qo'shdi: "+name+" (№"+examNo+", "+total.toLocaleString()+" so'm"+(debt>0?(", QARZ "+debt.toLocaleString()):"")+")",user.name)}
   allWeeksCache=null;
   document.getElementById("fName").value="";document.getElementById("fPassport").value="";document.getElementById("fNote").value="";document.getElementById("fDollar").value="";document.getElementById("fSom").value="";
   selCat="oddiy";renderCat();applyCatPrice("oddiy","fPrice");
@@ -1261,14 +1354,9 @@ function sECat(k){eCat=k;renderECat();applyCatPrice(k,"ePrice");updEPay()}
 function sEPay(t){ePay=t;renderEPay();const dw=document.getElementById("eDollarWrap");dw.style.display=(t==="Dollar")?"block":"none";if(t==="Dollar"&&todayRate&&!document.getElementById("eRate").value)document.getElementById("eRate").value=todayRate;updEPay()}
 
 if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").then(reg=>{reg.update();reg.addEventListener("updatefound",()=>{const nw=reg.installing;if(nw)nw.addEventListener("statechange",()=>{if(nw.state==="installed"&&navigator.serviceWorker.controller)location.reload()})})}).catch(()=>{})})}
-
-(async function init(){
-  const params=new URLSearchParams(location.search);const v=params.get("v");
-  if(v){try{const vpw=await getViewerPw();if(v===vpw){user={id:"viewer",isAdmin:false,role:"viewer",name:"Ko'ruvchi"};document.getElementById("loader").style.display="flex";await startApp();return}}catch(e){}}
-  const saved=localStorage.getItem("aaUser");
-  if(saved){try{user=JSON.parse(saved);startApp()}catch(e){document.getElementById("loader").style.display="none";show("ovLogin")}}
-  else{document.getElementById("loader").style.display="none";show("ovLogin")}
-})();
+// App bootstrap now happens entirely inside the onAuthStateChanged
+// listener registered above (see "── AUTH ──") - no separate init() or
+// ?v=/localStorage bootstrap needed any more.
 </script>
 </body>
 </html>
